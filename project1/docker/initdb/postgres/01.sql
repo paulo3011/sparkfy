@@ -15,6 +15,9 @@ drop database if exists sparkifydb;
 -- By instructing CREATE DATABASE to copy template0 instead of template1, you can create a “pristine” user database (one where no user-defined objects exist and where the system objects have not been altered) that contains none of the site-local additions in template1.
 create database sparkifydb with encoding 'utf8' TEMPLATE template0;
 
+-- to use database sparkifydb
+\c sparkifydb
+
 -- dimension tables
 
 -- users - users in the app
@@ -27,6 +30,7 @@ create table users
     ,last_name varchar(60)
     ,gender varchar(1)
     ,level varchar(4) -- paid or free
+    ,PRIMARY KEY (user_id)
 );
 
 -- songs - songs in music database
@@ -39,20 +43,23 @@ create table songs
     ,title varchar(60)
     ,artist_id varchar(30)
     ,year smallint
-    ,duration numeric(3,6) -- ex: 218.93179
+    ,duration numeric(9,6) -- ex: 218.93179
+    ,PRIMARY KEY (song_id)
 );
 
 -- artists - artists in music database
 -- https://docs.mapbox.com/help/glossary/lat-lon/
 -- https://stackoverflow.com/questions/15965166/what-is-the-maximum-length-of-latitude-and-longitude
 -- https://en.wikipedia.org/wiki/Geographic_coordinate_system
+-- The precision of a numeric is the total count of significant digits in the whole number, that is, the number of digits to both sides of the decimal point. The number 23.5141 has a precision of 6 and a scale of 4. Integers can be considered to have a scale of zero.
 create table artists
 (
     artist_id varchar(30)
     ,name varchar(60)
     ,location varchar(60)
-    ,latitude numeric(3,6)  -- ex: 35.14968
-    ,longitude numeric(3,6) -- ex: -90.04892
+    ,latitude numeric(9,6)  -- ex: 35.14968
+    ,longitude numeric(9,6) -- ex: -90.04892
+    ,PRIMARY KEY (artist_id)
 );
 
 -- time - timestamps of records in songplays broken down into specific units
@@ -65,14 +72,15 @@ create table time
     ,month smallint not null
     ,year smallint not null
     ,weekday smallint not null
+    ,PRIMARY KEY (start_time)
 );
 
 -- fact tables
 
-create fact_songplays
+create table fact_songplays
 (
-    songplay_id bigserial NOT NULL --bigserial == default nextval('fact_songplays_id')
-    ,start_time timestamp, 
+    songplay_id bigserial NOT NULL -- bigserial == default nextval('fact_songplays_id')
+    ,start_time timestamp 
     ,user_id integer        REFERENCES users (user_id)
     ,level varchar(4)       -- paid or free
     ,song_id varchar(30)    REFERENCES songs (song_id)
@@ -80,7 +88,7 @@ create fact_songplays
     ,session_id integer
     ,location varchar(60)
     ,user_agent varchar(400)
-    PRIMARY KEY (songplay_id)
+    ,PRIMARY KEY (songplay_id)
 );
 
 -- COMMENT ON TABLE 
