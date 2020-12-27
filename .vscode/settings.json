@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "~/.virtualenvs/sparkfy/bin/python",
+    "python.autoComplete.extraPaths": ["project1/runtime/"]
+}
