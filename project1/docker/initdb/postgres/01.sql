@@ -55,8 +55,8 @@ create table songs
 create table artists
 (
     artist_id varchar(30)
-    ,name varchar(60)
-    ,location varchar(60)
+    ,name varchar(160) -- note: "artist_name": "Montserrat Caball\u00e9;Placido Domingo;Vicente Sardinero;Judith Blegen;Sherrill Milnes;Georg Solti"
+    ,location varchar(160)
     ,latitude numeric(9,6)  -- ex: 35.14968
     ,longitude numeric(9,6) -- ex: -90.04892
     ,PRIMARY KEY (artist_id)
@@ -65,7 +65,7 @@ create table artists
 -- time - timestamps of records in songplays broken down into specific units
 create table time
 (
-    start_time timestamp not null -- represent the timestamp where one song was played
+    start_time bigint not null -- represent the timestamp where one song was played
     ,hour smallint not null
     ,day smallint not null
     ,week smallint not null
@@ -77,19 +77,19 @@ create table time
 
 -- fact tables
 
-create table fact_songplays
+create table songplays
 (
-    songplay_id bigserial NOT NULL -- bigserial == default nextval('fact_songplays_id')
-    ,start_time timestamp 
+    songplay_id bigserial NOT NULL -- bigserial == default nextval('songplays_id')
+    ,start_time bigint
     ,user_id integer        REFERENCES users (user_id)
     ,level varchar(4)       -- paid or free
-    ,song_id varchar(30)    REFERENCES songs (song_id)
-    ,artist_id varchar(30)  REFERENCES artists (artist_id)
+    ,song_id varchar(30)    NULL  REFERENCES songs (song_id)
+    ,artist_id varchar(30)  NULL REFERENCES artists (artist_id)
     ,session_id integer
     ,location varchar(60)
     ,user_agent varchar(400)
     ,PRIMARY KEY (songplay_id)
 );
 
--- COMMENT ON TABLE 
-COMMENT ON COLUMN fact_songplays.start_time IS 'When the song was played';
+-- COMMENT ON TABLE
+COMMENT ON COLUMN songplays.start_time IS 'When the song was played';
