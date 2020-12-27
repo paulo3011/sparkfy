@@ -153,14 +153,9 @@ def check_table_total(cur):
     else:
         print("Error on ETL.")
 
-def main(host="127.0.0.1"):
+def main(host="127.0.0.1", path = ""):
     conn, cur = get_conn(host)
-    # conn = psycopg2.connect(f"host={host} dbname=sparkifydb user=student password=student")
-    # conn.set_session(autocommit=True)
-    # cur = conn.cursor()
 
-    # path = "./"
-    path = ""
     process_data(cur, conn, filepath=path + 'data/song_data', func=process_song_file)
     process_data(cur, conn, filepath=path + 'data/log_data', func=process_log_file)
 
