@@ -1,15 +1,15 @@
 # DROP TABLES
 
-songplay_table_drop = "drop table songplay"
-user_table_drop = "drop table users"
-song_table_drop = "drop table songs"
-artist_table_drop = "drop table artists"
-time_table_drop = "drop table time"
+songplay_table_drop = "drop table if exists songplays"
+user_table_drop = "drop table if exists users"
+song_table_drop = "drop table if exists songs"
+artist_table_drop = "drop table if exists artists"
+time_table_drop = "drop table if exists time"
 
 # CREATE TABLES
 
 songplay_table_create = ("""
-create table songplay
+create table if not exists songplays
 (
     songplay_id bigserial NOT NULL -- bigserial == default nextval('fact_songplays_id')
     ,start_time timestamp 
@@ -25,7 +25,7 @@ create table songplay
 """)
 
 user_table_create = ("""
-create table users
+create table if not exists users
 (
     user_id integer -- can have up to 2.147.483.647 users
     ,first_name varchar(60)
@@ -37,7 +37,7 @@ create table users
 """)
 
 song_table_create = ("""
-create table songs
+create table if not exists songs
 (
     song_id varchar(30)
     ,title varchar(60)
@@ -50,7 +50,7 @@ create table songs
 """)
 
 artist_table_create = ("""
-create table artists
+create table if not exists artists
 (
     artist_id varchar(30)
     ,name varchar(60)
@@ -62,7 +62,7 @@ create table artists
 """)
 
 time_table_create = ("""
-create table time
+create table if not exists time
 (
     start_time timestamp not null -- represent the timestamp where one song was played
     ,hour smallint not null
@@ -78,7 +78,7 @@ create table time
 # INSERT RECORDS
 
 songplay_table_insert = ("""
-INSERT INTO songplay
+INSERT INTO songplays
 (start_time, user_id, "level", song_id, artist_id, session_id, "location", user_agent)
 VALUES(%s, %s, %s, %s, %s, %s, %s, %s);
 """)
@@ -112,10 +112,10 @@ VALUES(%s, %s, %s, %s, %s, %s, %s);
 # FIND SONGS
 
 song_select = ("""
-select * from songplay limit 5
+select * from songplays limit 5
 """)
 
 # QUERY LISTS
 
-create_table_queries = [songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
+create_table_queries = [user_table_create, song_table_create, artist_table_create, time_table_create,songplay_table_create]
 drop_table_queries = [songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
