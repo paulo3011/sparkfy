@@ -12,11 +12,11 @@ songplay_table_create = ("""
 create table if not exists songplays
 (
     songplay_id bigserial NOT NULL -- bigserial == default nextval('fact_songplays_id')
-    ,start_time bigint 
+    ,start_time bigint
     ,user_id integer        REFERENCES users (user_id)
     ,level varchar(4)       -- paid or free
-    ,song_id varchar(30)    REFERENCES songs (song_id)
-    ,artist_id varchar(30)  REFERENCES artists (artist_id)
+    ,song_id varchar(30)    NULL REFERENCES songs (song_id)
+    ,artist_id varchar(30)  NULL REFERENCES artists (artist_id)
     ,session_id integer
     ,location varchar(60)
     ,user_agent varchar(400)
@@ -87,7 +87,7 @@ user_table_insert = ("""
 INSERT INTO users
 (user_id, first_name, last_name, gender, "level")
 VALUES(%s, %s, %s, %s, %s)
-ON CONFLICT (user_id) DO UPDATE 
+ON CONFLICT (user_id) DO UPDATE
     SET first_name=EXCLUDED.first_name
     ,last_name=EXCLUDED.last_name
     ,gender=EXCLUDED.gender
@@ -100,7 +100,7 @@ song_table_insert = ("""
 INSERT INTO songs
 (song_id, title, artist_id, "year", duration)
 VALUES(%s, %s, %s, %s, %s)
-ON CONFLICT (song_id) DO UPDATE 
+ON CONFLICT (song_id) DO UPDATE
     SET title=EXCLUDED.title
     ,artist_id=EXCLUDED.artist_id
     ,"year"=EXCLUDED.year
@@ -111,7 +111,7 @@ artist_table_insert = ("""
 INSERT INTO artists
 (artist_id, "name", "location", latitude, longitude)
 VALUES(%s, %s, %s, %s, %s)
-ON CONFLICT (artist_id) DO UPDATE 
+ON CONFLICT (artist_id) DO UPDATE
     SET name=EXCLUDED.name
     ,location=EXCLUDED.location
     ,latitude=EXCLUDED.latitude
@@ -130,7 +130,7 @@ time_table_insert = ("""
 INSERT INTO "time"
 (start_time, "hour", "day", week, "month", "year", weekday)
 VALUES(%s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (start_time) DO UPDATE 
+ON CONFLICT (start_time) DO UPDATE
     SET hour=EXCLUDED.hour
     ,day=EXCLUDED.day
     ,week=EXCLUDED.week
@@ -149,6 +149,22 @@ song_select = ("""
 select s.song_id, s.artist_id from songs s
 join artists a on a.artist_id=s.artist_id
 where s.title=%s and a.name=%s and s.duration=%s
+""")
+
+# to check if etl run ok
+count_tables = ("""
+SELECT count(0), 'songplays' as "table" FROM public.songplays
+UNION all
+SELECT count(0), 'songplays_with_song_id' as "table" FROM public.songplays  where song_id is not null
+UNION ALL
+SELECT count(0), 'artists' as "table" FROM public.artists
+UNION ALL
+SELECT count(0), 'artists' as "table" FROM public.songs
+UNION ALL
+SELECT count(0), 'users' as "table" FROM public.users
+UNION ALL
+SELECT count(0), 'time' as "table" FROM public.time
+;
 """)
 
 # QUERY LISTS
