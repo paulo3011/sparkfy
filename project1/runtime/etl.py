@@ -6,6 +6,7 @@ from sql_queries import *
 import numpy as np
 from datetime import datetime
 import sys
+import time
 
 #filepath = "/home/paulo/projects/paulo3011/sparkfy/project1/data/song_data/A/A/A/TRAAAVO128F93133D4.json"
 #df = pd.read_json(filepath,lines=True)
@@ -123,10 +124,31 @@ def process_data(cur, conn, filepath, func):
         print('{}/{} files processed.'.format(i, num_files))
 
 
+def get_conn(host="127.0.0.1", retry_counter=0, retry_limit=5, sleep_time=5):
+    """
+    Return cursor and connection to sparkifydb.
+    """
+    try:
+        conn = psycopg2.connect(f"host={host} dbname=sparkifydb user=student password=student")
+        # conn.set_session(autocommit=True)
+        cur = conn.cursor()
+        return conn, cur
+    except psycopg2.OperationalError as error:
+        if retry_counter >= retry_limit:
+            raise error
+        else:
+            retry_counter += 1
+            print("got error {}. reconnecting {}".format(str(error).strip(), retry_counter))
+            time.sleep(sleep_time)
+            return get_conn(host, retry_counter, retry_limit, sleep_time)
+    except (Exception, psycopg2.Error) as error:
+        raise error
+
 def main(host="127.0.0.1"):
-    conn = psycopg2.connect(f"host={host} dbname=sparkifydb user=student password=student")
+    conn, cur = get_conn(host)
+    # conn = psycopg2.connect(f"host={host} dbname=sparkifydb user=student password=student")
     # conn.set_session(autocommit=True)
-    cur = conn.cursor()
+    # cur = conn.cursor()
 
     # path = "/home/paulo/projects/paulo3011/sparkfy/project1/"
     path = ""

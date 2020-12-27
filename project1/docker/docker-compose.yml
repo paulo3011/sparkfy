@@ -2,7 +2,7 @@ version: '3.7'
 services:
     # https://hub.docker.com/_/postgres
     postgres:
-        container_name: compose-sparkify-pgsql
+        container_name: sparkify-pgsql
         image: postgres
         environment:
             # - POSTGRES_DB=sparkify
@@ -21,7 +21,7 @@ services:
           - sparkify
 
     adminer:
-        container_name: compose-sparkify-adminer
+        container_name: sparkify-adminer
         image: adminer
         restart: always
         ports:
@@ -30,7 +30,7 @@ services:
           - sparkify
 
     etl:
-        container_name: compose-sparkify-etl
+        container_name: sparkify-etl
         # command that build de airflow image
         build:
             # context past to docker (what folder will be used to take files for build image)
@@ -40,7 +40,7 @@ services:
         volumes:
             - ../runtime/data:/usr/src/app/data
             - ../runtime:/usr/src/app/
-        command: [ "-a", "runjob_and_inspect"]
+        command: [ "-a", "runjob"] # runjob_and_inspect
         depends_on:
             - postgres
         networks:
