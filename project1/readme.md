@@ -16,11 +16,11 @@ In this project, you'll apply what you've learned on data modeling with Postgres
 
 # Checklist
 
-- [] Create a database schema with fact and dimension tables for a star schema
-- [] Create a Postgres database with tables designed to optimize queries on song play analysis
-- [] Create an ETL pipeline that transfers data from files in __two local directories__ into these tables in Postgres using Python and SQL
-- [] You'll be able to test your database and ETL pipeline by running queries given to you by the analytics team from Sparkify
-- [] Compare your results with their expected results
+- [ok] Create a database schema with fact and dimension tables for a star schema
+- [ok] Create a Postgres database with tables designed to optimize queries on song play analysis
+- [ok] Create an ETL pipeline that transfers data from files in __two local directories__ into these tables in Postgres using Python and SQL
+- [ok] You'll be able to test your database and ETL pipeline by running queries given to you by the analytics team from Sparkify
+- [-] Compare your results with their expected results
 
 
 # Requirements
