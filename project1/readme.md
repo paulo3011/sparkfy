@@ -44,7 +44,7 @@ artists - artists in music database
 time - timestamps of records in songplays broken down into specific units
 - start_time, hour, day, week, month, year, weekday
 
-# Results
+# Results and How to run
 
 ## [To test using docker-compose do](#dockercompose):
 
@@ -361,5 +361,3 @@ starting etl test
 30/30 files processed.
 [(6820, 'songplays'), (1, 'songplays_with_song_id'), (69, 'artists'), (71, 'artists'), (96, 'users'), (6813, 'time')]
 ```
-
-# How to run
