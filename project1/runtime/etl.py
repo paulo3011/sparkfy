@@ -69,27 +69,32 @@ def process_log_file(cur, filepath):
         values = (df['userId'][ind].item(), df['firstName'][ind], df['lastName'][ind], df['gender'][ind], df['level'][ind])
         try:
             cur.execute(user_table_insert, values)
-        except:
+        except Exception as e:
             print("Oops!", sys.exc_info())
-            print(types)
-            print()
-
+            print(values, 'types:', types)
+            raise e
 
         # get songid and artistid from song and artist tables
-        cur.execute(song_select, (df['song'][ind], df['artist'][ind], df['length'][ind]))
+        song_filter = (df['song'][ind], df['artist'][ind], df['length'][ind])
+        cur.execute(song_select, song_filter)
         results = cur.fetchone()
 
         if results:
             songid, artistid = results
         else:
             songid, artistid = None, None
+            # print("songid not found:", song_select, song_filter)
 
         # insert songplay record
         # (start_time, user_id, "level", song_id, artist_id, session_id, "location", user_agent)
         songplay_data = (df['ts'][ind].item(),
                          df['userId'][ind].item(), df['level'][ind], songid, artistid, df['sessionId'][ind].item(), df['location'][ind], df['userAgent'][ind])
-        songplaytypes = get_types(songplay_data)
-        cur.execute(songplay_table_insert, songplay_data)
+        try:
+            cur.execute(songplay_table_insert, songplay_data)
+        except Exception as e:
+            print("Oops!", sys.exc_info())
+            print(songplay_data, 'types:', get_types(songplay_data))
+            raise e
 
 
 def get_types(data):
@@ -123,7 +128,8 @@ def main():
     # conn.set_session(autocommit=True)
     cur = conn.cursor()
 
-    path = "/home/paulo/projects/paulo3011/sparkfy/project1/"
+    # path = "/home/paulo/projects/paulo3011/sparkfy/project1/"
+    path = ""
     process_data(cur, conn, filepath=path + 'data/song_data', func=process_song_file)
     process_data(cur, conn, filepath=path + 'data/log_data', func=process_log_file)
 
