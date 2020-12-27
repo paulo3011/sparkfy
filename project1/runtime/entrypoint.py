@@ -11,7 +11,7 @@ import getopt
 from typing import Dict
 from typing_extensions import Literal
 
-ACTIONS = ["start", "inspect"]
+ACTIONS = ["runjob", "inspect","runjob_and_inspect"]
 
 def _runcmd(cmd):
     print(cmd)
@@ -25,16 +25,22 @@ def _inspect():
     cmd = f"tail -f /dev/null"
     _runcmd(cmd)   
 
-def _start():
+def _runjob():
     print("starting ETL")   
+
+def _runjob_and_inspect():
+    _runjob() 
+    _inspect()    
 
 def _run(action:str):
     print("running action => ",action)
 
-    if action == "start":
-        _start()
+    if action == "runjob":
+        _runjob()
     elif action == "inspect":
         _inspect()
+    elif action == "runjob_and_inspect":
+        _runjob_and_inspect()
 
 def usage():
     print ("usage: python entrypoint.py -a <action>")
