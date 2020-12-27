@@ -123,8 +123,8 @@ def process_data(cur, conn, filepath, func):
         print('{}/{} files processed.'.format(i, num_files))
 
 
-def main():
-    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+def main(host="127.0.0.1"):
+    conn = psycopg2.connect(f"host={host} dbname=sparkifydb user=student password=student")
     # conn.set_session(autocommit=True)
     cur = conn.cursor()
 

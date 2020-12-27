@@ -4,7 +4,7 @@ services:
     postgres:
         container_name: compose-sparkify-pgsql
         image: postgres
-        environment:            
+        environment:
             # - POSTGRES_DB=sparkify
             - POSTGRES_USER=student
             - POSTGRES_PASSWORD=student
@@ -14,18 +14,18 @@ services:
                 max-file: "3"
         ports:
             - 5432:5432
-        volumes:             
-            - ./initdb/postgres:/docker-entrypoint-initdb.d 
+        volumes:
+            - ./initdb/postgres:/docker-entrypoint-initdb.d
             # - ~/docker-data/postgres:/var/lib/postgresql/data
         networks:
-          - sparkify            
+          - sparkify
 
     adminer:
         container_name: compose-sparkify-adminer
         image: adminer
         restart: always
         ports:
-          - 8090:8080      
+          - 8090:8080
         networks:
           - sparkify
 
@@ -38,13 +38,13 @@ services:
             # dockerfile path
             dockerfile: docker/Dockerfile
         volumes:
-            - ../data:/usr/src/app/data      
+            - ../runtime/data:/usr/src/app/data
             - ../runtime:/usr/src/app/
         command: [ "-a", "runjob_and_inspect"]
         depends_on:
             - postgres
         networks:
-          - sparkify                      
+          - sparkify
 
 # https://docs.docker.com/compose/networking/
 networks:
