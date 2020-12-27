@@ -1,3 +1,4 @@
+"""ELT module."""
 import os
 import glob
 import psycopg2
@@ -13,13 +14,12 @@ import time
 #print(df.dtypes["duration"])
 
 def process_song_file(cur, filepath):
-
+    """
+    Process the song file and load song and artist data to tables.
+    """
     # open song file
     df = pd.read_json(filepath,lines=True)
     df = df.replace(np.nan, '', regex=True)
-    #df["duration"].replace({"": 0, " ": 0}, inplace=True)
-    #df["artist_latitude"].replace({"": 0, " ": 0}, inplace=True)
-    #df["artist_longitude"].replace({"": 0, " ": 0}, inplace=True)
     df["artist_latitude"].replace(r'^\s*$', 0.0, regex=True, inplace=True)
     df["artist_longitude"].replace(r'^\s*$', 0.0, regex=True, inplace=True)
 
@@ -35,6 +35,10 @@ def process_song_file(cur, filepath):
 
 
 def process_log_file(cur, filepath):
+    """
+    Process the log file and extract data from the songs that were played.
+    Additionally: load user table and time table
+    """
     # open log file
     df = pd.read_json(filepath,lines=True)
 
@@ -99,6 +103,9 @@ def process_log_file(cur, filepath):
 
 
 def get_types(data):
+    """
+    Return one typle with all data types in data variable.
+    """
     types = ()
     for d in data:
         types = (*types, type(d))
@@ -106,6 +113,9 @@ def get_types(data):
 
 
 def process_data(cur, conn, filepath, func):
+    """
+    Process all log and song files.
+    """
     # get all files matching extension from directory
     all_files = []
     for root, dirs, files in os.walk(filepath):
@@ -146,6 +156,9 @@ def get_conn(host="127.0.0.1", retry_counter=0, retry_limit=5, sleep_time=5):
 
 
 def check_table_total(cur):
+    """
+    Check total of records in tables.
+    """
     cur.execute(count_tables)
     results = cur.fetchall()
     if results:
@@ -154,6 +167,9 @@ def check_table_total(cur):
         print("Error on ETL.")
 
 def main(host="127.0.0.1", path = ""):
+    """
+    Execute the etl job.
+    """
     conn, cur = get_conn(host)
 
     process_data(cur, conn, filepath=path + 'data/song_data', func=process_song_file)
