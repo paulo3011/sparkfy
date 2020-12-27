@@ -5,7 +5,7 @@ services:
         container_name: sparkify-pgsql
         image: postgres
         environment:
-            # - POSTGRES_DB=sparkify
+            - POSTGRES_DB=studentdb
             - POSTGRES_USER=student
             - POSTGRES_PASSWORD=student
         logging:
