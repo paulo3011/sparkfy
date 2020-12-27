@@ -1,11 +1,12 @@
+"""Run a test like when run on udacity environment."""
 from create_tables import main as createdb
 from etl import main as runetl
 
-def runt_etl():
+def _runt_etl():
     print("starting etl test")
     createdb()
-    runetl(path="/home/paulo/projects/paulo3011/sparkfy/project1/runtime/")
+    runetl(path="./")
 
 
 if __name__ == "__main__":
-    runt_etl()
+    _runt_etl()

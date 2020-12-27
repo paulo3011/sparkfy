@@ -254,7 +254,7 @@ Note: the database needs to be up, you can use [docker-compose](#dockercompose) 
 
 ```shell
 cd project1/runtime/
-jupyter_test.py
+python jupyter_test.py
 starting etl test
 71 files found in /home/paulo/projects/paulo3011/sparkfy/project1/runtime/data/song_data
 1/71 files processed.

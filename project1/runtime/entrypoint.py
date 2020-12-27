@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-"""etl entrypoint."""
+"""etl docker entrypoint."""
 # https://stackabuse.com/executing-shell-commands-with-python/
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
@@ -45,6 +45,9 @@ def _run(action:str):
         _runjob_and_inspect()
 
 def usage():
+    """
+    Prints how to use this.
+    """
     print ("usage: python entrypoint.py -a <action>")
     print ("usage: python entrypoint.py --action <action>")
     print ("Actions:", ACTIONS)
