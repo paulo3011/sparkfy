@@ -20,7 +20,13 @@ In this project, you'll apply what you've learned on data modeling with Postgres
 - [ok] Create a Postgres database with tables designed to optimize queries on song play analysis
 - [ok] Create an ETL pipeline that transfers data from files in __two local directories__ into these tables in Postgres using Python and SQL
 - [ok] You'll be able to test your database and ETL pipeline by running queries given to you by the analytics team from Sparkify
-- [-] Compare your results with their expected results
+- [ok] Compare your results with their expected results
+
+```sql
+SELECT * FROM songplays where song_id is NOT NULL and artist_id is NOT NULL LIMIT 5
+-- the above query should return you a single record.
+-- https://knowledge.udacity.com/questions/426155
+```
 
 
 # Requirements
@@ -361,3 +367,23 @@ starting etl test
 30/30 files processed.
 [(6820, 'songplays'), (1, 'songplays_with_song_id'), (69, 'artists'), (71, 'artists'), (96, 'users'), (6813, 'time')]
 ```
+
+To reset docker-compose run
+
+```shell
+cd project1/docker
+# this will drop everthing
+docker-compose down
+```
+
+# Project files
+
+## project1/runtime
+
+Auxiliary pythons and ETL routine files.
+
+## project1/docker
+
+A different way to run, develop and test ETL using docker and docker-compose.
+
+The database in this form is initialized by the script: project1/docker/initdb/postgres/01.sql
