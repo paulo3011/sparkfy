@@ -2,6 +2,7 @@
 from create_tables import main as createdb
 from etl import main as runetl
 
+
 def _runt_etl():
     print("starting etl test")
     createdb()
