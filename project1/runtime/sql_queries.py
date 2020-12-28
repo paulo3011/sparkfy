@@ -1,3 +1,5 @@
+"""Utility queries for create, drop tables and insert data."""
+
 # DROP TABLES
 
 songplay_table_drop = "drop table if exists songplays"
