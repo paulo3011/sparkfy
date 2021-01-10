@@ -179,5 +179,5 @@ PRIMARY KEYS
 
 Presentation
 
-- [] The notebooks should include a description of the query the data is modeled after.
+- [ok] The notebooks should include a description of the query the data is modeled after.
 - [ok] Code should be organized well into the different queries. Any in-line comments that were clearly part of the project instructions should be removed so the notebook provides a professional look.
