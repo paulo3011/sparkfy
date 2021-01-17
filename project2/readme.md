@@ -60,7 +60,7 @@ In Apache Cassandra, you want to model your data to your queries, and if your bu
 - The WHERE statement is allowing us to do the fast reads. With Apache Cassandra, we are talking about big data -- think terabytes of data -- so we are making it fast for read purposes. Data is spread across all the nodes. By using the WHERE statement, we know which node to go to, from which node to get that data and serve it back. For example, imagine we have 10 years of data on 10 nodes or servers. So 1 year's data is on a separate node. By using the WHERE year = 1 statement we know which node to visit fast to pull the data from.
 
 
-### Create statement good practice
+### Create statement
 
 We should create the tables with keys and clustering keys organized in this way:
 
