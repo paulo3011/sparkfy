@@ -80,9 +80,10 @@ where song='All Hands Against His Own'
 create_table3 = """
 CREATE TABLE IF NOT EXISTS user_history (
     song text,
+    user_id,
     first_name text,
     last_name text,
-    PRIMARY KEY ((song), first_name, last_name)
+    PRIMARY KEY ((song, user_id), first_name, last_name)
 )
 """
 
