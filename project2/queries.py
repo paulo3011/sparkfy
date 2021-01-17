@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS artist_history (
 
 insert2 = """
 insert into artist_history
-(user_id, session_id, artist, song, item_in_session, first_name, last_name)
+(user_id, session_id, item_in_session, first_name, last_name, artist, song)
 VALUES (%s,%s,%s,%s,%s,%s,%s)
 """
 
