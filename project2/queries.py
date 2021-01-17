@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS artist_history (
     last_name text,
     artist text,
     song text,
-    PRIMARY KEY ((user_id,session_id),item_in_session, first_name, last_name)
+    PRIMARY KEY ((user_id,session_id), item_in_session)
 )
 """
 
