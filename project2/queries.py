@@ -48,7 +48,7 @@ drop_table1 = "DROP TABLE IF EXISTS music_history"
 query2 = """
 select artist, song from artist_history
 where user_id = 10 and session_id = 182
-order by item_in_session, first_name, last_name"""
+order by item_in_session"""
 
 create_table2 = """
 CREATE TABLE IF NOT EXISTS artist_history (
@@ -86,13 +86,13 @@ CREATE TABLE IF NOT EXISTS user_history (
     user_id int,
     first_name text,
     last_name text,
-    PRIMARY KEY ((song, user_id), first_name, last_name)
+    PRIMARY KEY (song, user_id)
 )
 """
 #
 insert3 = """
 insert into user_history (song, user_id, first_name, last_name)
-VALUES (%s,%s,%s)
+VALUES (%s,%s,%s,%s)
 """
 
 drop_table3 = "DROP TABLE IF EXISTS user_history"
