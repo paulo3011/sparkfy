@@ -90,6 +90,20 @@ __The sequence of the columns in CREATE statement and INSERT should be the same 
 
 In apache cassandra, every column that i want to filter needs to be in partition key?
 
+```sql
+-- sample table
+CREATE TABLE IF NOT EXISTS music_history (
+user_id int,
+artist text,
+song text,
+first_name text,
+last_name text,
+session_id int,
+item_in_session int,
+PRIMARY KEY ((user_id,session_id),item_in_session, first_name, last_name)
+)
+```
+
 Since Cassandra uses partition key to determine the node where the data exists, you should always filter on the partition key first. In the above example, filtering on ```user_id``` and ```session_id``` is definitely a must.
 
 You can further filter on the other clustering columns, but the order in which you filter should be same as how the clustering key is setup. For example, the following filters are valid:
