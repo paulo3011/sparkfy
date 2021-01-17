@@ -31,8 +31,11 @@ CREATE TABLE IF NOT EXISTS music_history (
 )
 """
 
+# __The sequence of the columns in CREATE statement and INSERT should be the
+# same as to the order of COMPOSITE PRIMARY KEY and CLUSTERING COLUMNs.__
+# (Udacity)
 insert1 = """
-insert into music_history (artist, song, length, session_id, item_in_session)
+insert into music_history (session_id, item_in_session, artist, song, length)
 VALUES (%s,%s,%s,%s,%s)
 """
 

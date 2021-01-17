@@ -64,6 +64,8 @@ In Apache Cassandra, you want to model your data to your queries, and if your bu
 
 We should create the tables with keys and clustering keys organized in this way:
 
+"The sequence in which columns appear should reflect how the data is partitioned and the order of the data within the partitions." (Udacity)
+
 ```sql
 CREATE TABLE mytable (
    key int,
@@ -81,6 +83,8 @@ Because the database uses the clustering columns to determine the location of th
 __To avoid full scans of the partition__ and to make queries more efficient, the database requires that the higher level columns in the sort order (col_1, col_2, and col_3) are identified using the equals or IN operators. Ranges are allowed on the last column (col_4).
 
 seealso: https://docs.datastax.com/en/dse/5.1/cql/cql/cql_using/whereClustering.html
+
+__The sequence of the columns in CREATE statement and INSERT should be the same as to the order of COMPOSITE PRIMARY KEY and CLUSTERING COLUMNs.__ (Udacity)
 
 ### Questions
 
