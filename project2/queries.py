@@ -83,15 +83,15 @@ where song='All Hands Against His Own'
 create_table3 = """
 CREATE TABLE IF NOT EXISTS user_history (
     song text,
-    user_id,
+    user_id int,
     first_name text,
     last_name text,
     PRIMARY KEY ((song, user_id), first_name, last_name)
 )
 """
-
+#
 insert3 = """
-insert into user_history (first_name, last_name, song)
+insert into user_history (song, user_id, first_name, last_name)
 VALUES (%s,%s,%s)
 """
 
