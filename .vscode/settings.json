@@ -1,4 +1,10 @@
 {
     "python.pythonPath": "~/.virtualenvs/sparkfy/bin/python",
-    "python.autoComplete.extraPaths": ["project1/runtime/"]
+    "python.autoComplete.extraPaths": [
+        "project1/runtime/"
+    ],
+    "python.linting.pylintEnabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.linting.pylamaEnabled": true,
+    "python.linting.enabled": true
 }

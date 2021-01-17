@@ -59,6 +59,30 @@ In Apache Cassandra, you want to model your data to your queries, and if your bu
 - AVOID using "ALLOW FILTERING": [why you should not use it](https://www.datastax.com/blog/allow-filtering-explained)
 - The WHERE statement is allowing us to do the fast reads. With Apache Cassandra, we are talking about big data -- think terabytes of data -- so we are making it fast for read purposes. Data is spread across all the nodes. By using the WHERE statement, we know which node to go to, from which node to get that data and serve it back. For example, imagine we have 10 years of data on 10 nodes or servers. So 1 year's data is on a separate node. By using the WHERE year = 1 statement we know which node to visit fast to pull the data from.
 
+
+### Questions
+
+In apache cassandra, every column that i want to filter needs to be in partition key?
+
+Since Cassandra uses partition key to determine the node where the data exists, you should always filter on the partition key first. In the above example, filtering on ```user_id``` and ```session_id``` is definitely a must.
+
+You can further filter on the other clustering columns, but the order in which you filter should be same as how the clustering key is setup. For example, the following filters are valid:
+
+user_id, session_id
+user_id, session_id, item_in_session
+user_id, session_id, item_in_session, first_name
+user_id, session_id, item_in_session, first_name, last_name
+However, the following filters are invalid:
+
+user_id, session_id, first_name
+user_id, session_id, last_name
+user_id, session_id, item_in_session, last_name
+Hope this helps!
+
+PS: In extreme situations, you can query by using any of the filters but it will be highly inefficient and in worst cases break the system. Have a look at [Allow Clustering](https://www.datastax.com/blog/allow-filtering-explained) to learn more about it
+
+[Ghanshyam Y](https://knowledge.udacity.com/questions/443427)
+
 # ReferenceS:
 
 - https://classroom.udacity.com/nanodegrees/nd027/parts/f7dbb125-87a2-4369-bb64-dc5c21bb668a/modules/a7801de4-ee3f-4531-b887-82dea67f47a6/lessons/73fd6e35-3319-4520-94b5-9651437235d7/concepts/65cecac3-8728-4fe1-b06e-3950c123185b
