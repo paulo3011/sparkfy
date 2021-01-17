@@ -9,13 +9,14 @@
 query1 = "select artist, song, length from music_history where session_id = 338 and item_in_session = 4"
 
 # All columns used in where clause needs to be in primary key (partition or clustering keys)
+# seealso: https://docs.datastax.com/en/dse/5.1/cql/cql/cql_using/whereClustering.html
 create_table1 = """
 CREATE TABLE IF NOT EXISTS music_history (
+    session_id int,
+    item_in_session int,
     artist text,
     song text,
     length decimal,
-    session_id int,
-    item_in_session int,
     PRIMARY KEY (session_id,item_in_session)
 )
 """
@@ -39,11 +40,11 @@ create_table2 = """
 CREATE TABLE IF NOT EXISTS artist_history (
     user_id int,
     session_id int,
-    artist text,
-    song text,
     item_in_session int,
     first_name text,
     last_name text,
+    artist text,
+    song text,
     PRIMARY KEY ((user_id,session_id),item_in_session, first_name, last_name)
 )
 """
@@ -61,9 +62,9 @@ query3 = "select first_name, last_name from user_history where song='All Hands A
 
 create_table3 = """
 CREATE TABLE IF NOT EXISTS user_history (
+    song text,
     first_name text,
     last_name text,
-    song text,
     PRIMARY KEY ((song), first_name, last_name)
 )
 """

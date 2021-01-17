@@ -60,6 +60,28 @@ In Apache Cassandra, you want to model your data to your queries, and if your bu
 - The WHERE statement is allowing us to do the fast reads. With Apache Cassandra, we are talking about big data -- think terabytes of data -- so we are making it fast for read purposes. Data is spread across all the nodes. By using the WHERE statement, we know which node to go to, from which node to get that data and serve it back. For example, imagine we have 10 years of data on 10 nodes or servers. So 1 year's data is on a separate node. By using the WHERE year = 1 statement we know which node to visit fast to pull the data from.
 
 
+### Create statement good practice
+
+We should create the tables with keys and clustering keys organized in this way:
+
+```sql
+CREATE TABLE mytable (
+   key int,
+   col_1 int,
+   col_2 int,
+   col_3 int,
+   col_4 int,
+-- ...
+   PRIMARY KEY ((key), col_1, col_2, col_3, col_4));
+```
+Tip: A well-designed table uses clustering columns to allow a query to return ranges of data
+
+Because the database uses the clustering columns to determine the location of the data on the partition, you must identify the higher level clustering columns definitively using the equals (=) or IN operators. In a query, you can only restrict the lowest level using the range operators (>, >=, <, or <=).
+
+__To avoid full scans of the partition__ and to make queries more efficient, the database requires that the higher level columns in the sort order (col_1, col_2, and col_3) are identified using the equals or IN operators. Ranges are allowed on the last column (col_4).
+
+seealso: https://docs.datastax.com/en/dse/5.1/cql/cql/cql_using/whereClustering.html
+
 ### Questions
 
 In apache cassandra, every column that i want to filter needs to be in partition key?
