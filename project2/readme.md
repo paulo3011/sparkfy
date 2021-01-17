@@ -108,16 +108,20 @@ Since Cassandra uses partition key to determine the node where the data exists, 
 
 You can further filter on the other clustering columns, but the order in which you filter should be same as how the clustering key is setup. For example, the following filters are valid:
 
+```sql
 user_id, session_id
 user_id, session_id, item_in_session
 user_id, session_id, item_in_session, first_name
 user_id, session_id, item_in_session, first_name, last_name
+```
+
 However, the following filters are invalid:
 
+```sql
 user_id, session_id, first_name
 user_id, session_id, last_name
 user_id, session_id, item_in_session, last_name
-Hope this helps!
+```
 
 PS: In extreme situations, you can query by using any of the filters but it will be highly inefficient and in worst cases break the system. Have a look at [Allow Clustering](https://www.datastax.com/blog/allow-filtering-explained) to learn more about it
 
