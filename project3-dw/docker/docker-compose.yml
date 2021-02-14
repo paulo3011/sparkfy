@@ -1,0 +1,34 @@
+version: '3.7'
+services:
+    # https://hub.docker.com/_/postgres
+    postgres:
+        container_name: sparkify_dw-pgsql
+        image: postgres
+        environment:
+            - POSTGRES_DB=studentdb
+            - POSTGRES_USER=student
+            - POSTGRES_PASSWORD=student
+        logging:
+            options:
+                max-size: 10m
+                max-file: "3"
+        ports:
+            - 5433:5432
+        volumes:
+            - ./initdb/postgres:/docker-entrypoint-initdb.d
+            # - ~/docker-data/postgres:/var/lib/postgresql/data
+        networks:
+          - sparkify_dw
+
+    adminer:
+        container_name: sparkify_dw-adminer
+        image: adminer
+        restart: always
+        ports:
+          - 8090:8080
+        networks:
+          - sparkify_dw
+
+# https://docs.docker.com/compose/networking/
+networks:
+  sparkify_dw:
