@@ -30,10 +30,10 @@ CREATE TABLE IF NOT EXISTS fact_songplays
 (
     songplay_id bigint IDENTITY(0,1) NOT NULL
     ,start_time bigint
-    ,user_id integer        REFERENCES users (user_id)
+    ,user_id integer        REFERENCES dim_users (user_id)
     ,level varchar(4)       -- paid or free
-    ,song_id varchar(30)    NULL REFERENCES songs (song_id)
-    ,artist_id varchar(30)  NULL REFERENCES artists (artist_id)
+    ,song_id varchar(30)    NULL REFERENCES dim_songs (song_id)
+    ,artist_id varchar(30)  NULL REFERENCES dim_artists (artist_id)
     ,session_id integer
     ,location varchar(60)
     ,user_agent varchar(400)
