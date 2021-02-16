@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS dim_song
     ,title varchar(255)
     ,artist_id varchar(30)
     ,year smallint
-    ,duration numeric(9,6)
+    ,duration numeric(10,6)
     ,PRIMARY KEY (song_id)
 );
 
@@ -133,7 +133,7 @@ artist_table_create = ("""
 CREATE TABLE IF NOT EXISTS dim_artist
 (
     artist_id varchar(30)
-    ,name varchar(120)
+    ,name varchar(255)
     ,location varchar(255)
     ,latitude numeric(9,6)
     ,longitude numeric(9,6)
@@ -189,20 +189,99 @@ region '{}';
 
 # FINAL TABLES
 
-songplay_table_insert = ("""
-""")
-
 user_table_insert = ("""
+INSERT INTO dim_user
+SELECT
+  userid
+  ,firstname
+  ,lastname
+  ,gender
+  ,level
+FROM tmp_events
+WHERE page='NextSong'
+;
+-- 6820 updated rows
 """)
 
 song_table_insert = ("""
+INSERT INTO dim_song
+SELECT
+  song_id
+  ,title
+  ,artist_id
+  ,"year"
+  ,duration
+FROM tmp_songs
+;
+-- updated rows 14896
+-- TODO remove duplicate registers
 """)
 
 artist_table_insert = ("""
+CREATE TEMPORARY TABLE tmp_duplicated_songs
+AS
+SELECT
+    artist_id
+    ,artist_name
+    ,artist_location
+    ,artist_latitude
+    ,artist_longitude
+    ,ROW_NUMBER () OVER (
+    	PARTITION BY artist_id
+    	ORDER BY (has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) DESC )
+    	AS row_id
+	,(has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) AS rank
+FROM (
+	SELECT DISTINCT
+	    artist_id
+	    ,artist_name
+	    ,artist_location
+	    ,artist_latitude
+	    ,artist_longitude
+	    ,case when artist_name is not null then 1 else 0 end  	  AS has_artist_name
+	    ,case when artist_location is not null then 1 else 0 end  AS has_artist_location
+	    ,case when artist_latitude is not null then 1 else 0 end  AS has_artist_latitude
+	    ,case when artist_longitude is not null then 1 else 0 end AS has_artist_longitude
+	FROM tmpsongs
+) as songs
+;
+
+INSERT INTO dim_artist
+SELECT DISTINCT
+    artist_id
+    ,artist_name
+    ,artist_location
+    ,artist_latitude
+    ,artist_longitude
+FROM tmpsongs
+;
+-- updated rows 10025
+-- TODO remove duplicate registers
 """)
 
 time_table_insert = ("""
+ALTER TABLE tmp_events ADD COLUMN event_date timestamp;
+--convert timestamp in milliseconds to datetime
+UPDATE tmp_events SET event_date=TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' WHERE ts IS NOT NULL;
+-- 8056 updated rows
+
+INSERT INTO dim_time
+select
+  ts AS start_time,
+  CAST(DATE_PART ( HOUR , event_date ) AS INT) AS "hour",
+  CAST(DATE_PART ( DAY , event_date ) AS INT) AS "day",
+  CAST(DATE_PART ( WEEK , event_date ) AS INT) AS "week",
+  CAST(DATE_PART ( MONTH , event_date ) AS INT) AS "month",
+  CAST(DATE_PART ( YEAR, event_date ) AS INT) AS "year",
+  CAST(DATE_PART ( WEEKDAY , event_date ) AS INT) AS "weekday"
+from tmp_events
+where page='NextSong'
+;
 """)
+
+songplay_table_insert = ("""
+""")
+
 
 # QUERY LISTS
 
