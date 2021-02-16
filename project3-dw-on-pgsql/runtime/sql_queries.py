@@ -7,22 +7,56 @@ config.read('dwh.cfg')
 
 # DROP TABLES
 
-staging_events_table_drop = "DROP TABLE IF EXISTS ;"
-staging_songs_table_drop = "DROP TABLE IF EXISTS ;"
+staging_events_table_drop = "DROP TABLE IF EXISTS tmp_events;"
+staging_songs_table_drop = "DROP TABLE IF EXISTS tmp_songs;"
 
 songplay_table_drop = "DROP TABLE IF EXISTS fact_songplays;"
 
-user_table_drop = "DROP TABLE IF EXISTS ;"
-song_table_drop = "DROP TABLE IF EXISTS ;"
-artist_table_drop = "DROP TABLE IF EXISTS ;"
-time_table_drop = "DROP TABLE IF EXISTS ;"
+user_table_drop = "DROP TABLE IF EXISTS dim_user;"
+song_table_drop = "DROP TABLE IF EXISTS dim_song;"
+artist_table_drop = "DROP TABLE IF EXISTS dim_artist;"
+time_table_drop = "DROP TABLE IF EXISTS dim_time;"
 
 # CREATE TABLES
 
-staging_events_table_create= ("""
+staging_events_table_create = ("""
+CREATE TEMPORARY TABLE tmp_events
+(
+    artist varchar(30)
+    ,auth varchar(60)
+    ,firstname varchar(60)
+    ,gender varchar(30)
+    ,iteminsession integer
+    ,lastname varchar(60)
+    ,length numeric(8,5)
+    ,level varchar(4)
+    ,location varchar(60)
+    ,method varchar(10)
+    ,page varchar(60)
+    ,registration bigint
+    ,sessionid integer
+    ,song varchar(60)
+    ,status smallint
+    ,ts bigint
+    ,useragent varchar(max)
+    ,userid integer
+);
 """)
 
 staging_songs_table_create = ("""
+CREATE TEMPORARY TABLE tmp_songs
+(
+    num_songs integer
+    ,artist_id varchar(30)
+    ,artist_latitude numeric(9,6)  -- ex: 35.14968
+    ,artist_longitude numeric(9,6) -- ex: -90.04892
+    ,artist_location varchar(120)
+    ,artist_name varchar(120)
+    ,song_id varchar(30)
+    ,title varchar(60)
+    ,duration numeric(9,6)
+    ,year smallint
+);
 """)
 
 songplay_table_create = ("""
@@ -30,10 +64,10 @@ CREATE TABLE IF NOT EXISTS fact_songplays
 (
     songplay_id bigint IDENTITY(0,1) NOT NULL
     ,start_time bigint
-    ,user_id integer        REFERENCES dim_users (user_id)
+    ,user_id integer        REFERENCES dim_user (user_id)
     ,level varchar(4)       -- paid or free
-    ,song_id varchar(30)    NULL REFERENCES dim_songs (song_id)
-    ,artist_id varchar(30)  NULL REFERENCES dim_artists (artist_id)
+    ,song_id varchar(30)    NULL REFERENCES dim_song (song_id)
+    ,artist_id varchar(30)  NULL REFERENCES dim_artist (artist_id)
     ,session_id integer
     ,location varchar(60)
     ,user_agent varchar(400)
@@ -67,7 +101,7 @@ SAMPLE QUESTIONS:
 """
 
 user_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_users
+CREATE TABLE IF NOT EXISTS dim_user
 (
     user_id integer
     ,first_name varchar(60)
@@ -77,12 +111,12 @@ CREATE TABLE IF NOT EXISTS dim_users
     ,PRIMARY KEY (user_id)
 );
 
-COMMENT ON TABLE dim_users IS 'users in the app';
-COMMENT ON COLUMN dim_users.level IS 'paid or free';
+COMMENT ON TABLE dim_user IS 'users in the app';
+COMMENT ON COLUMN dim_user.level IS 'paid or free';
 """)
 
 song_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_songs
+CREATE TABLE IF NOT EXISTS dim_song
 (
     song_id varchar(30)
     ,title varchar(60)
@@ -92,11 +126,11 @@ CREATE TABLE IF NOT EXISTS dim_songs
     ,PRIMARY KEY (song_id)
 );
 
-COMMENT ON TABLE dim_songs IS 'songs in music database';
+COMMENT ON TABLE dim_song IS 'songs in music database';
 """)
 
 artist_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_artists
+CREATE TABLE IF NOT EXISTS dim_artist
 (
     artist_id varchar(30)
     ,name varchar(120)
@@ -106,7 +140,7 @@ CREATE TABLE IF NOT EXISTS dim_artists
     ,PRIMARY KEY (artist_id)
 );
 
-COMMENT ON TABLE dim_artists IS 'artists in music database';
+COMMENT ON TABLE dim_artist IS 'artists in music database';
 """)
 
 time_table_create = ("""
@@ -153,7 +187,29 @@ time_table_insert = ("""
 
 # QUERY LISTS
 
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
-drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
+create_table_queries = [
+    staging_events_table_create,
+    staging_songs_table_create,
+    songplay_table_create,
+    user_table_create,
+    song_table_create,
+    artist_table_create,
+    time_table_create]
+
+drop_table_queries = [
+    staging_events_table_drop,
+    staging_songs_table_drop,
+    songplay_table_drop,
+    user_table_drop,
+    song_table_drop,
+    artist_table_drop,
+    time_table_drop]
+
 copy_table_queries = [staging_events_copy, staging_songs_copy]
-insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+
+insert_table_queries = [
+    songplay_table_insert,
+    user_table_insert,
+    song_table_insert,
+    artist_table_insert,
+    time_table_insert]
