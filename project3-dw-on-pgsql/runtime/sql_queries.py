@@ -1,9 +1,9 @@
+import os
 import configparser
-
 
 # CONFIG
 config = configparser.ConfigParser()
-config.read('dwh.cfg')
+config.read(os.path.join(os.path.dirname(__file__), "dwh.cfg"))
 
 # DROP TABLES
 
@@ -161,12 +161,31 @@ COMMENT ON COLUMN dim_time.start_time IS 'represent the timestamp where one song
 """)
 
 # STAGING TABLES
+cluster_settings = config["CLUSTER"]
+iam_role_setting = config["IAM_ROLE"]
 
 staging_events_copy = ("""
-""").format()
+copy tmp_events from '{}'
+iam_role '{}'
+json '{}'
+region '{}';
+""").format(
+    config["S3"]["LOG_DATA"],
+    config["IAM_ROLE"]["ARN"],
+    config["S3"]["LOG_JSONPATH"],
+    config["S3"]["REGION"]
+    )
 
 staging_songs_copy = ("""
-""").format()
+copy tmp_songs from '{}'
+iam_role '{}'
+json 'auto'
+region '{}';
+""").format(
+    config["S3"]["SONG_DATA"],
+    config["IAM_ROLE"]["ARN"],
+    config["S3"]["REGION"]
+    )
 
 # FINAL TABLES
 
