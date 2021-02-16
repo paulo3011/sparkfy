@@ -22,20 +22,20 @@ time_table_drop = "DROP TABLE IF EXISTS dim_time;"
 staging_events_table_create = ("""
 CREATE TEMPORARY TABLE tmp_events
 (
-    artist varchar(30)
+    artist varchar(255)
     ,auth varchar(60)
     ,firstname varchar(60)
     ,gender varchar(30)
     ,iteminsession integer
     ,lastname varchar(60)
-    ,length numeric(8,5)
+    ,length numeric(9,5)
     ,level varchar(4)
     ,location varchar(60)
     ,method varchar(10)
     ,page varchar(60)
     ,registration bigint
     ,sessionid integer
-    ,song varchar(60)
+    ,song varchar(255)
     ,status smallint
     ,ts bigint
     ,useragent varchar(max)
@@ -50,11 +50,11 @@ CREATE TEMPORARY TABLE tmp_songs
     ,artist_id varchar(30)
     ,artist_latitude numeric(9,6)  -- ex: 35.14968
     ,artist_longitude numeric(9,6) -- ex: -90.04892
-    ,artist_location varchar(120)
+    ,artist_location varchar(255)
     ,artist_name varchar(120)
     ,song_id varchar(30)
-    ,title varchar(60)
-    ,duration numeric(9,6)
+    ,title varchar(255)
+    ,duration numeric(9,5)
     ,year smallint
 );
 """)
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS fact_songplays
     ,song_id varchar(30)    NULL REFERENCES dim_song (song_id)
     ,artist_id varchar(30)  NULL REFERENCES dim_artist (artist_id)
     ,session_id integer
-    ,location varchar(60)
+    ,location varchar(255)
     ,user_agent varchar(400)
     ,PRIMARY KEY (songplay_id)
 )
@@ -119,7 +119,7 @@ song_table_create = ("""
 CREATE TABLE IF NOT EXISTS dim_song
 (
     song_id varchar(30)
-    ,title varchar(60)
+    ,title varchar(255)
     ,artist_id varchar(30)
     ,year smallint
     ,duration numeric(9,6)
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS dim_artist
 (
     artist_id varchar(30)
     ,name varchar(120)
-    ,location varchar(120)
+    ,location varchar(255)
     ,latitude numeric(9,6)
     ,longitude numeric(9,6)
     ,PRIMARY KEY (artist_id)
