@@ -53,7 +53,7 @@ CREATE TABLE stage_songs
     ,artist_latitude numeric(9,6)  -- ex: 35.14968
     ,artist_longitude numeric(9,6) -- ex: -90.04892
     ,artist_location varchar(255)
-    ,artist_name varchar(120)
+    ,artist_name varchar(255)
     ,song_id varchar(30)
     ,title varchar(255)
     ,duration numeric(9,5)
@@ -201,15 +201,26 @@ SELECT
   ,lastname
   ,gender
   ,level
-FROM stage_events
-WHERE page='NextSong'
+FROM
+(
+  SELECT
+    userid
+    ,firstname
+    ,lastname
+    ,gender
+    ,level
+    ,event_date
+      ,ROW_NUMBER () OVER (PARTITION BY userid ORDER BY event_date DESC) AS row_id
+  FROM stage_events
+  WHERE page='NextSong'
+) AS users
+WHERE row_id=1
 ;
--- 6820 updated rows
 """)
 
 song_table_insert = ("""
 INSERT INTO dim_song
-SELECT
+SELECT DISTINCT
   song_id
   ,title
   ,artist_id
@@ -217,12 +228,11 @@ SELECT
   ,duration
 FROM stage_songs
 ;
--- updated rows 14896
--- TODO remove duplicate registers
 """)
 
 artist_table_insert = ("""
-CREATE TEMPORARY TABLE tmp_duplicated_songs
+DROP TABLE IF EXISTS tmp_duplicated_artist;
+CREATE TEMPORARY TABLE tmp_duplicated_artist
 AS
 SELECT
     artist_id
@@ -238,7 +248,7 @@ SELECT
 FROM (
 	SELECT DISTINCT
 	    artist_id
-	    ,artist_name
+	    ,regexp_replace(artist_name,'\\s','') as artist_name
 	    ,artist_location
 	    ,artist_latitude
 	    ,artist_longitude
@@ -246,21 +256,24 @@ FROM (
 	    ,case when artist_location is not null then 1 else 0 end  AS has_artist_location
 	    ,case when artist_latitude is not null then 1 else 0 end  AS has_artist_latitude
 	    ,case when artist_longitude is not null then 1 else 0 end AS has_artist_longitude
-	FROM tmpsongs
+	FROM stage_songs
 ) as songs
 ;
 
 INSERT INTO dim_artist
-SELECT DISTINCT
-    artist_id
-    ,artist_name
-    ,artist_location
-    ,artist_latitude
-    ,artist_longitude
-FROM tmpsongs
+SELECT
+	artist_id,
+	artist_name,
+	artist_location,
+	artist_latitude,
+	artist_longitude
+FROM tmp_duplicated_artist
+WHERE
+	row_id=1
 ;
--- updated rows 10025
--- TODO remove duplicate registers
+-- updated rows 9553
+
+DROP TABLE IF EXISTS tmp_duplicated_artist;
 """)
 
 time_table_insert = ("""
