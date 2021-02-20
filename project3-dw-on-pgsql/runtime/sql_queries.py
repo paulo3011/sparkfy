@@ -7,8 +7,8 @@ config.read(os.path.join(os.path.dirname(__file__), "dwh.cfg"))
 
 # DROP TABLES
 
-staging_events_table_drop = "DROP TABLE IF EXISTS tmp_events;"
-staging_songs_table_drop = "DROP TABLE IF EXISTS tmp_songs;"
+staging_events_table_drop = "DROP TABLE IF EXISTS stage_events;"
+staging_songs_table_drop = "DROP TABLE IF EXISTS stage_songs;"
 
 songplay_table_drop = "DROP TABLE IF EXISTS fact_songplays;"
 
@@ -20,7 +20,7 @@ time_table_drop = "DROP TABLE IF EXISTS dim_time;"
 # CREATE TABLES
 
 staging_events_table_create = ("""
-CREATE TEMPORARY TABLE tmp_events
+CREATE TABLE stage_events
 (
     artist varchar(255)
     ,auth varchar(60)
@@ -41,10 +41,12 @@ CREATE TEMPORARY TABLE tmp_events
     ,useragent varchar(max)
     ,userid integer
 );
+
+COMMENT ON TABLE stage_events IS 'Stage table to load song play events from s3';
 """)
 
 staging_songs_table_create = ("""
-CREATE TEMPORARY TABLE tmp_songs
+CREATE TABLE stage_songs
 (
     num_songs integer
     ,artist_id varchar(30)
@@ -57,13 +59,15 @@ CREATE TEMPORARY TABLE tmp_songs
     ,duration numeric(9,5)
     ,year smallint
 );
+
+COMMENT ON TABLE stage_songs IS 'Stage table to load song data from s3';
 """)
 
 songplay_table_create = ("""
 CREATE TABLE IF NOT EXISTS fact_songplays
 (
     songplay_id bigint IDENTITY(0,1) NOT NULL
-    ,start_time bigint
+    ,start_time bigint      REFERENCES dim_time (start_time)
     ,user_id integer        REFERENCES dim_user (user_id)
     ,level varchar(4)       -- paid or free
     ,song_id varchar(30)    NULL REFERENCES dim_song (song_id)
@@ -165,7 +169,7 @@ cluster_settings = config["CLUSTER"]
 iam_role_setting = config["IAM_ROLE"]
 
 staging_events_copy = ("""
-copy tmp_events from '{}'
+copy stage_events from '{}'
 iam_role '{}'
 json '{}'
 region '{}';
@@ -177,7 +181,7 @@ region '{}';
     )
 
 staging_songs_copy = ("""
-copy tmp_songs from '{}'
+copy stage_songs from '{}'
 iam_role '{}'
 json 'auto'
 region '{}';
@@ -197,7 +201,7 @@ SELECT
   ,lastname
   ,gender
   ,level
-FROM tmp_events
+FROM stage_events
 WHERE page='NextSong'
 ;
 -- 6820 updated rows
@@ -211,7 +215,7 @@ SELECT
   ,artist_id
   ,"year"
   ,duration
-FROM tmp_songs
+FROM stage_songs
 ;
 -- updated rows 14896
 -- TODO remove duplicate registers
@@ -260,9 +264,9 @@ FROM tmpsongs
 """)
 
 time_table_insert = ("""
-ALTER TABLE tmp_events ADD COLUMN event_date timestamp;
+ALTER TABLE stage_events ADD COLUMN event_date timestamp;
 --convert timestamp in milliseconds to datetime
-UPDATE tmp_events SET event_date=TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' WHERE ts IS NOT NULL;
+UPDATE stage_events SET event_date=TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 second' WHERE ts IS NOT NULL;
 -- 8056 updated rows
 
 INSERT INTO dim_time
@@ -274,7 +278,7 @@ select
   CAST(DATE_PART ( MONTH , event_date ) AS INT) AS "month",
   CAST(DATE_PART ( YEAR, event_date ) AS INT) AS "year",
   CAST(DATE_PART ( WEEKDAY , event_date ) AS INT) AS "weekday"
-from tmp_events
+from stage_events
 where page='NextSong'
 ;
 """)
