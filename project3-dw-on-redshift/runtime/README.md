@@ -267,7 +267,7 @@ total_users       |96   |
 total_time        |6813 |
 stage_events      |8056 |
 stage_songs       |14896|
-total_with_song_id|321  |
+total_with_song_id|305  |
 */
 ```
 
@@ -297,7 +297,7 @@ select
 Name                                        |Value|
 --------------------------------------------|-----|
 songtitle_in_events_and_not_in_songdataset  |7246 |
-artist_name_in_events_and_not_in_songdataset|3859 |
-fact_events_without_songid_and_artistid     |7735 |
+artist_name_in_events_and_not_in_songdataset|3886 |
+fact_events_without_songid_and_artistid     |7751 |
 */
 ```
