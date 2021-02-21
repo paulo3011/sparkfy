@@ -222,7 +222,7 @@ song_table_insert = ("""
 INSERT INTO dim_song
 SELECT DISTINCT
   song_id
-  ,title
+  ,BTRIM(title) AS title
   ,artist_id
   ,"year"
   ,duration
@@ -241,35 +241,35 @@ SELECT
     ,artist_latitude
     ,artist_longitude
     ,ROW_NUMBER () OVER (
-    	PARTITION BY artist_id
-    	ORDER BY (has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) DESC )
-    	AS row_id
-	,(has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) AS rank
+      PARTITION BY artist_id
+      ORDER BY (has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) DESC )
+      AS row_id
+  ,(has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) AS rank
 FROM (
-	SELECT DISTINCT
-	    artist_id
-	    ,regexp_replace(artist_name,'\\s','') as artist_name
-	    ,artist_location
-	    ,artist_latitude
-	    ,artist_longitude
-	    ,case when artist_name is not null then 1 else 0 end  	  AS has_artist_name
-	    ,case when artist_location is not null then 1 else 0 end  AS has_artist_location
-	    ,case when artist_latitude is not null then 1 else 0 end  AS has_artist_latitude
-	    ,case when artist_longitude is not null then 1 else 0 end AS has_artist_longitude
-	FROM stage_songs
+  SELECT DISTINCT
+      artist_id
+      ,BTRIM(artist_name) as artist_name
+      ,artist_location
+      ,artist_latitude
+      ,artist_longitude
+      ,case when artist_name is not null then 1 else 0 end      AS has_artist_name
+      ,case when artist_location is not null then 1 else 0 end  AS has_artist_location
+      ,case when artist_latitude is not null then 1 else 0 end  AS has_artist_latitude
+      ,case when artist_longitude is not null then 1 else 0 end AS has_artist_longitude
+  FROM stage_songs
 ) as songs
 ;
 
 INSERT INTO dim_artist
 SELECT
-	artist_id,
-	artist_name,
-	artist_location,
-	artist_latitude,
-	artist_longitude
+  artist_id,
+  artist_name,
+  artist_location,
+  artist_latitude,
+  artist_longitude
 FROM tmp_duplicated_artist
 WHERE
-	row_id=1
+  row_id=1
 ;
 -- updated rows 9553
 
@@ -283,7 +283,7 @@ UPDATE stage_events SET event_date=TIMESTAMP 'epoch' + ts/1000 * INTERVAL '1 sec
 -- 8056 updated rows
 
 INSERT INTO dim_time
-select
+select DISTINCT
   ts AS start_time,
   CAST(DATE_PART ( HOUR , event_date ) AS INT) AS "hour",
   CAST(DATE_PART ( DAY , event_date ) AS INT) AS "day",
@@ -297,6 +297,48 @@ where page='NextSong'
 """)
 
 songplay_table_insert = ("""
+ALTER TABLE stage_events ADD COLUMN song_id varchar(30);
+ALTER TABLE stage_events ADD COLUMN artist_id varchar(30);
+
+UPDATE stage_events
+  SET song_id = dim_song.song_id,
+  artist_id = dim_song.artist_id
+FROM dim_song
+JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
+WHERE
+  dim_song.title = BTRIM(stage_events.song)
+  and dim_artist.name = BTRIM(stage_events.artist)
+  and dim_song.duration = stage_events.length
+;
+-- update rows 303
+
+UPDATE stage_events
+  SET song_id = dim_song.song_id,
+  artist_id = dim_song.artist_id
+FROM dim_song
+JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
+WHERE
+  dim_song.title = BTRIM(stage_events.song)
+  AND dim_artist.name = BTRIM(stage_events.artist)
+  AND (stage_events.artist_id is null or stage_events.song_id is null)
+;
+--UPDATED ROWS 14
+
+INSERT INTO fact_songplays
+(start_time, user_id, "level", song_id, artist_id, session_id, location, user_agent)
+SELECT
+  ev.ts,
+  ev.userid,
+  ev."level",
+  s.song_id,
+  s.artist_id,
+  ev.sessionid,
+  ev.location,
+  ev.useragent
+FROM stage_events ev
+LEFT JOIN dim_song s ON (s.song_id = ev.song_id)
+;
+-- updated rows 8056
 """)
 
 
