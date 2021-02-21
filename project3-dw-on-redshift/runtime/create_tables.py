@@ -1,7 +1,8 @@
 import os
 import configparser
 import psycopg2
-from sql_queries import create_table_queries, drop_table_queries
+from sql_queries import create_table_queries, drop_table_queries, create_schema
+
 
 def drop_tables(cur, conn):
     for query in drop_table_queries:
@@ -22,6 +23,9 @@ def main():
     params = "host={} dbname={} user={} password={} port={}"
     conn = psycopg2.connect(params.format(*config["CLUSTER"].values()))
     cur = conn.cursor()
+
+    cur.execute(create_schema)
+    conn.commit()
 
     drop_tables(cur, conn)
     create_tables(cur, conn)

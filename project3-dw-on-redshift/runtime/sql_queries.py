@@ -342,6 +342,13 @@ LEFT JOIN dim_song s ON (s.song_id = ev.song_id)
 """)
 
 
+create_schema = """
+-- Create a new schema on redshift called dw
+CREATE SCHEMA IF NOT EXISTS dw2;
+-- select dw schema as default
+SET search_path TO dw2;
+"""
+
 # QUERY LISTS
 
 create_table_queries = [
@@ -365,8 +372,8 @@ drop_table_queries = [
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 
 insert_table_queries = [
-    songplay_table_insert,
+    time_table_insert,
     user_table_insert,
     song_table_insert,
     artist_table_insert,
-    time_table_insert]
+    songplay_table_insert]
