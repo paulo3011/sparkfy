@@ -99,7 +99,7 @@ This table use the above distkey and sort key because:
 
 1. fact_songplays
 
-To find event songs and artist id's was made:
+To find identification for song and artists in event data was made:
 
 ```sql
 ALTER TABLE stage_events ADD COLUMN song_id varchar(30);
