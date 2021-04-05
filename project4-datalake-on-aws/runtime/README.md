@@ -333,3 +333,34 @@ artist_name_in_events_and_not_in_songdataset|3886 |
 fact_events_without_songid_and_artistid     |7751 |
 */
 ```
+
+# Settings in use
+
+## fs.s3a.multipart.size
+
+How big (in bytes) to split upload or copy operations up into. A suffix from the set {K,M,G,T,P} may be used to scale the numeric value.
+
+Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html
+
+## spark.jars.packages
+
+Comma-separated list of Maven coordinates of jars to include on the driver and executor classpaths. The coordinates should be groupId:artifactId:version. If spark.jars.ivySettings is given artifacts will be resolved according to the configuration in the file, otherwise artifacts will be searched for in the local maven repo, then maven central and finally any additional remote repositories given by the command-line option --repositories.
+
+Seealso: https://spark.apache.org/docs/latest/configuration.html
+
+## org.apache.hadoop:hadoop-aws
+
+This jar is used to include S3A client suport.
+
+Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html
+
+# References
+
+- https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html
+- https://spark.apache.org/docs/latest/configuration.html
+- https://docs.qubole.com/en/latest/user-guide/engines/spark/spark-supportability.html
+- http://hortonworks.com/wp-content/uploads/2016/03/asparagus-chart-hdp24.png
+- https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
+- https://spark.apache.org/downloads.html
+- https://stackoverflow.com/questions/60172792/reading-data-from-s3-using-pyspark-throws-java-lang-numberformatexception-for-i
+- https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.1.5/bk_cloud-data-access/content/s3a-fast-upload-config.html
