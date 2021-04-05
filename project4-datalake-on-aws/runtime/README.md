@@ -364,3 +364,5 @@ Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/inde
 - https://spark.apache.org/downloads.html
 - https://stackoverflow.com/questions/60172792/reading-data-from-s3-using-pyspark-throws-java-lang-numberformatexception-for-i
 - https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.1.5/bk_cloud-data-access/content/s3a-fast-upload-config.html
+- https://stackoverflow.com/questions/31610971/spark-repartition-vs-coalesce
+- https://mungingdata.com/apache-spark/broadcast-joins/

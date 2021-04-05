@@ -7,14 +7,18 @@ from settings import (
     S3_DESTINATION_AWS_SECRET_ACCESS_KEY,
     SONG_DATA,
     LOG_DATA,
-    LAKE_DIM_SONG
+    LAKE_DIM_SONG,
+    LAKE_DIM_ARTIST
     )
 from schemas import (
     song_src_schema,
-    dim_song_schema
+    dim_song_schema,
+    dim_artist_schema,
+    log_src_schema
     )
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import broadcast
 from pyspark.sql.functions import udf, col
 from pyspark.sql.functions import (
     year,
@@ -44,6 +48,8 @@ conf = SparkConf() \
 def create_spark_session():
     """
     Create the entry point to programming Spark with the Dataset and DataFrame API.
+    The entry point into all functionality in Spark is the SparkSession class.
+    Instead of having a spark context, hive context, SQL context, now all of it is encapsulated in a Spark session.
     Seealso: http://spark.apache.org/docs/3.1.1/api/python/reference/pyspark.sql.html#spark-session-apis
     """
     spark = SparkSession \
@@ -61,47 +67,88 @@ def _to_lowercase(input):
 
 def process_song_data(sparkSession, input_data, output_data):
 
-    test_file = SONG_DATA + "/A/Y/L/TRAYLWV128F92FBA1D.json"
+    song_source = input_data + SONG_DATA
 
     # read song data file using dataframe api
-    df = sparkSession.read.json(path=test_file, schema=song_src_schema)
+    # All built-in file sources (including Text/CSV/JSON/ORC/Parquet) are able
+    # to discover and infer partitioning information automatically, but the
+    # paritions needs to be in the format key=value, which is not that case.
+    song_df = sparkSession.read.json(
+        path=song_source,
+        schema=song_src_schema,
+        recursiveFileLookup=True)
 
-    print(df.take(1))
-    df.printSchema()
-    df = df.map(_to_lowercase)
+    song_df.printSchema()
+
+    # does not make efect in song_df
+    # song_df = song_df.dropDuplicates()
+
+    # total rows: 14896
+    print(song_df.take(1))
+
+    # nPartitions = song_df.rdd.getNumPartitions()
+    song_df = song_df.repartition(8)
+    # nPartitions = song_df.rdd.getNumPartitions()
 
     # extract columns to create songs table
-    dim_song_columns = dim_song_schema
-    songs_table = df.select(dim_song_schema.names)
-    print(songs_table.take(1))
+    songs_table = song_df.select(dim_song_schema.names)
 
     # write songs table to parquet files partitioned by year and artist
     # http://spark.apache.org/docs/3.1.1/api/python/reference/api/pyspark.sql.DataFrameWriter.parquet.html#pyspark.sql.DataFrameWriter.parquet
-    songs_table.write.parquet(path=LAKE_DIM_SONG, partitionBy=["year","artist_id"], compression="snappy", mode="overwrite")
+    compression = "snappy"
+    song_path = output_data + LAKE_DIM_SONG
+    songs_table.write.parquet(
+        path=song_path,
+        partitionBy=["year", "artist_id"],
+        compression=compression,
+        mode="overwrite")
 
     # extract columns to create artists table
-    # todo: check sql from artist_table_insert
-    artists_table = "todo"
+    artists_table = song_df.select(dim_artist_schema.names)
+
+    print(artists_table.take(1))
+
+    # remove duplicates resulting in 10025 rows
+    artists_table = artists_table.dropDuplicates()
 
     # write artists table to parquet files
-    artists_table
+    artists_path = output_data + LAKE_DIM_ARTIST
+    artists_table.write.parquet(
+        path=artists_path,
+        compression=compression,
+        # this will clear previous files before write the new ones
+        mode="overwrite"
+    )
+
+    return (broadcast(songs_table), broadcast(artists_table))
 
 
-def process_log_data(spark, input_data, output_data):
+def process_log_data(sparkSession, input_data, output_data, songs_table, artists_table):
     # get filepath to log data file
-    log_data = LOG_DATA
+    log_data = input_data + LOG_DATA
 
     # read log data file
-    df = "todo"
+    log_df = sparkSession.read.json(
+        path=log_data,
+        schema=log_src_schema,
+        recursiveFileLookup=True)
+
+    print(log_df.take(1))
 
     # filter by actions for song plays
-    df = "todo"
+    # records in log data associated with song plays (page NextSong)
+    song_plays_df = log_df.filter("page='NextSong'")
+
+    print(song_plays_df.take(1))
+
+    # todo:
+    # https://review.udacity.com/#!/rubrics/2502/view
 
     # extract columns for users table
-    artists_table = "todo"
+    users_table = "todo"
 
     # write users table to parquet files
-    artists_table
+    users_table
 
     # create timestamp column from original timestamp column
     get_timestamp = udf()
@@ -129,11 +176,13 @@ def process_log_data(spark, input_data, output_data):
 
 def main():
     spark = create_spark_session()
-    input_data = "s3a://udacity-dend/"
-    output_data = ""
+    # input_data = "s3a://moreira-ud/udacity-dend/"
+    input_data = "/home/paulo/projects/paulo3011/sparkfy/data/"
+    # s3a://moreira-ud/lake/
+    output_data = "/tmp/spark/sparkfy/lake/"
 
-    process_song_data(spark, input_data, output_data)
-    process_log_data(spark, input_data, output_data)
+    songs_table, artists_table = process_song_data(spark, input_data, output_data)
+    process_log_data(spark, input_data, output_data, songs_table, artists_table)
 
 
 if __name__ == "__main__":

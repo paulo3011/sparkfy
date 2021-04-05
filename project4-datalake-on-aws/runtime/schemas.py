@@ -1,7 +1,9 @@
 from pyspark.sql.types import (
     StructType,
     StringType,
+    ShortType,
     IntegerType,
+    LongType,
     DoubleType,
     DecimalType)
 
@@ -20,10 +22,37 @@ song_src_schema.add("duration", DecimalType(), True)
 song_src_schema.add("year", IntegerType(), True)
 
 
-# dim tables
+log_src_schema = StructType()
+log_src_schema.add("artist", StringType(), True)
+log_src_schema.add("auth", StringType(), True)
+log_src_schema.add("firstName", StringType(), True)
+log_src_schema.add("gender", StringType(), True)
+log_src_schema.add("itemInSession", IntegerType(), True)
+log_src_schema.add("lastName", StringType(), True)
+log_src_schema.add("length", DecimalType(), True)
+log_src_schema.add("level", StringType(), True)
+log_src_schema.add("location", StringType(), True)
+log_src_schema.add("method", StringType(), True)
+log_src_schema.add("page", StringType(), True)
+log_src_schema.add("registration", LongType(), True)
+log_src_schema.add("sessionId", IntegerType(), True)
+log_src_schema.add("song", StringType(), True)
+log_src_schema.add("status", ShortType(), True)
+log_src_schema.add("ts", LongType(), True)
+log_src_schema.add("userAgent", StringType(), True)
+log_src_schema.add("userId", IntegerType(), True)
+
+
 dim_song_schema = StructType()
 dim_song_schema.add("song_id", StringType(), True)
 dim_song_schema.add("title", StringType(), True)
 dim_song_schema.add("artist_id", StringType(), True)
 dim_song_schema.add("year", IntegerType(), True)
 dim_song_schema.add("duration", DecimalType(), True)
+
+dim_artist_schema = StructType()
+dim_artist_schema.add("artist_id", StringType(), True)
+dim_artist_schema.add("artist_name", StringType(), True)
+dim_artist_schema.add("artist_location", StringType(), True)
+dim_artist_schema.add("artist_latitude", DoubleType(), True)
+dim_artist_schema.add("artist_longitude", DoubleType(), True)
