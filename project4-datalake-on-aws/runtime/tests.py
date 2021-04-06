@@ -1,33 +1,12 @@
+# import os
 import configparser
 from datetime import datetime
-import os
-from settings import (
-    S3_DESTINATION_REGION,
-    S3_DESTINATION_AWS_ACCESS_KEY_ID,
-    S3_DESTINATION_AWS_SECRET_ACCESS_KEY,
-    SONG_DATA,
-    LOG_DATA,
-    LAKE_DIM_SONG,
-    LAKE_DIM_ARTIST
-    )
-from schemas import (
-    song_src_schema,
-    dim_song_schema,
-    dim_artist_schema,
-    log_src_schema
-    )
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import broadcast
-from pyspark.sql.functions import udf, col
-from pyspark.sql.types import (TimestampType, IntegerType, ShortType)
+from udf.datetimeudf import _add_date_time_columns_to_df
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
-
-os.environ['AWS_REGION'] = S3_DESTINATION_REGION
-os.environ['AWS_ACCESS_KEY_ID'] = S3_DESTINATION_AWS_ACCESS_KEY_ID
-os.environ['AWS_SECRET_ACCESS_KEY'] = S3_DESTINATION_AWS_SECRET_ACCESS_KEY
 
 # Setup the Spark Process
 
@@ -51,73 +30,6 @@ def create_spark_session():
         .getOrCreate()
 
     return spark
-
-
-@udf(returnType=TimestampType())
-def timestamp_to_date(timestamp):
-    return datetime.fromtimestamp(timestamp / 1000.0)
-
-
-@udf(returnType=ShortType())
-def timestamp_to_weekday(timestamp):
-    """
-    Weekday as a decimal number, where 0 is Sunday and 6 is Saturday.
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%w"))
-
-
-@udf(returnType=ShortType())
-def timestamp_to_week_of_year(timestamp):
-    """
-    Week number of the year (Sunday as the first day of the week)
-    as a zero padded decimal number.
-    All days in a new year preceding the first Sunday are considered
-    to be in week 0. (00, 01, …, 53)
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%U"))
-
-
-@udf(returnType=ShortType())
-def timestamp_to_year(timestamp):
-    """
-    Year with century as a decimal number. (0001, 0002, …, 2013, 2014, …, 9998, 9999)
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%Y"))
-
-
-@udf(returnType=ShortType())
-def timestamp_to_month(timestamp):
-    """
-    Month as a zero-padded decimal number (01, 02, …, 12)
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%m"))
-
-
-@udf(returnType=ShortType())
-def timestamp_to_day(timestamp):
-    """
-    Day of the month as a zero-padded decimal number (1, 02, …, 31)
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%d"))
-
-
-@udf(returnType=ShortType())
-def timestamp_to_hour(timestamp):
-    """
-    Hour (24-hour clock) as a zero-padded decimal number.
-    """
-    return int(datetime.fromtimestamp(timestamp / 1000.0).strftime("%H"))
-
-
-def _add_date_time_columns_to_df(df, timestamp_column="ts"):
-    df = df.withColumn("event_date", timestamp_to_date(timestamp_column))
-    df = df.withColumn("hour", timestamp_to_hour(timestamp_column))
-    df = df.withColumn("day", timestamp_to_day(timestamp_column))
-    df = df.withColumn("week", timestamp_to_week_of_year(timestamp_column))
-    df = df.withColumn("month", timestamp_to_month(timestamp_column))
-    df = df.withColumn("year", timestamp_to_year(timestamp_column))
-    df = df.withColumn("weekday", timestamp_to_weekday(timestamp_column))
-    return df
 
 
 def right_join(sparkSession):
