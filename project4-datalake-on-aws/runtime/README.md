@@ -366,3 +366,6 @@ Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/inde
 - https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.1.5/bk_cloud-data-access/content/s3a-fast-upload-config.html
 - https://stackoverflow.com/questions/31610971/spark-repartition-vs-coalesce
 - https://mungingdata.com/apache-spark/broadcast-joins/
+- https://www.slideshare.net/databricks/introducing-dataframes-in-spark-for-large-scale-data-science (logical plan)
+- https://commons.wikimedia.org/wiki/File:SQL_Joins.svg
+- https://spark.apache.org/docs/3.1.1/api/python/reference/pyspark.sql.html#functions

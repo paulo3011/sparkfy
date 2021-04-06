@@ -133,6 +133,20 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
         schema=log_src_schema,
         recursiveFileLookup=True)
 
+    log_df.createOrReplaceTempView("stage_events")
+    songs_table.createOrReplaceTempView("dim_song")
+    artists_table.createOrReplaceTempView("dim_artist")
+    df = sparkSession.sql("""
+        SELECT * FROM dim_song ON (dim_song)
+        LEFT JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
+        RIGHT JOIN stage_events ON (
+            dim_song.title = BTRIM(stage_events.song)
+            AND dim_artist.name = BTRIM(stage_events.artist)
+        )
+    """)
+
+    print(df.take(1))
+
     print(log_df.take(1))
 
     # filter by actions for song plays
@@ -141,7 +155,9 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
 
     print(song_plays_df.take(1))
 
-    # todo:
+    # todo: add song_id and artist_id to songplay events
+    # join tables to log_df, dt são imutáveis
+    # fazer um test de sql com joing pra ver se funciona
     # https://review.udacity.com/#!/rubrics/2502/view
 
     # extract columns for users table
