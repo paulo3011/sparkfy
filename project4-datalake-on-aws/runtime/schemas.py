@@ -65,3 +65,11 @@ dim_time_schema.add("week", ShortType(), False)
 dim_time_schema.add("month", ShortType(), False)
 dim_time_schema.add("year", ShortType(), False)
 dim_time_schema.add("weekday", ShortType(), False)
+
+
+dim_user_schema = StructType()
+dim_user_schema.add("user_id", IntegerType(), False)
+dim_user_schema.add("first_name", StringType(), True)
+dim_user_schema.add("last_name", StringType(), True)
+dim_user_schema.add("gender", StringType(), True)
+dim_user_schema.add("level", StringType(), True)

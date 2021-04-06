@@ -14,7 +14,9 @@ from schemas import (
     song_src_schema,
     dim_song_schema,
     dim_artist_schema,
-    log_src_schema
+    log_src_schema,
+    dim_time_schema,
+    dim_user_schema
     )
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
