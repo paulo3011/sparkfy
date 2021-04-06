@@ -10,6 +10,7 @@ from settings import (
     LAKE_DIM_SONG,
     LAKE_DIM_ARTIST
     )
+from udf.datetimeudf import _add_date_time_columns_to_df
 from schemas import (
     song_src_schema,
     dim_song_schema,
@@ -21,15 +22,8 @@ from schemas import (
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import broadcast
-from pyspark.sql.functions import udf, col
-from pyspark.sql.functions import (
-    year,
-    month,
-    dayofmonth,
-    hour,
-    weekofyear,
-    date_format
-)
+from pyspark.sql.window import Window
+from pyspark.sql.functions import udf, col, row_number
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
@@ -135,27 +129,52 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
         schema=log_src_schema,
         recursiveFileLookup=True)
 
+    log_df = _add_date_time_columns_to_df(log_df)
     log_df.createOrReplaceTempView("stage_events")
     songs_table.createOrReplaceTempView("dim_song")
     artists_table.createOrReplaceTempView("dim_artist")
+
     df = sparkSession.sql("""
-        SELECT * FROM dim_song ON (dim_song)
+        SELECT
+            dim_song.song_id,
+            dim_song.title as song_title,
+            dim_song.year as song_year,
+            dim_song.duration as song_duration,
+            dim_artist.*,
+            'stage_events=>' as stage_events,
+            stage_events.ts as start_time,
+            stage_events.userId as user_id,
+            stage_events.firstName as first_name,
+            stage_events.lastName as last_name,
+            stage_events.gender,
+            stage_events.level,
+            stage_events.song,
+            stage_events.artist,
+            stage_events.event_date,
+            stage_events.hour,
+            stage_events.day,
+            stage_events.week,
+            stage_events.month,
+            stage_events.year,
+            stage_events.weekday,
+            stage_events.page
+        FROM dim_song
         LEFT JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
         RIGHT JOIN stage_events ON (
-            dim_song.title = BTRIM(stage_events.song)
-            AND dim_artist.name = BTRIM(stage_events.artist)
+            dim_song.title = stage_events.song
+            AND dim_artist.artist_name = stage_events.artist
         )
-    """)
+        WHERE stage_events.page='NextSong'
+        ;""")
 
+    # stage_events total: 6820
+    print("stage_events total: " + str(df.count()))
     print(df.take(1))
 
-    print(log_df.take(1))
-
-    # filter by actions for song plays
-    # records in log data associated with song plays (page NextSong)
-    song_plays_df = log_df.filter("page='NextSong'")
-
-    print(song_plays_df.take(1))
+    dim_time_df = df.select(dim_time_schema.names).dropDuplicates()
+    # dim time table: 6813
+    print("dim time table: " + str(dim_time_df.count()))
+    print(dim_time_df.take(1))
 
     # todo: add song_id and artist_id to songplay events
     # join tables to log_df, dt são imutáveis
