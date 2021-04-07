@@ -8,7 +8,10 @@ from settings import (
     SONG_DATA,
     LOG_DATA,
     LAKE_DIM_SONG,
-    LAKE_DIM_ARTIST
+    LAKE_DIM_ARTIST,
+    LAKE_DIM_USER,
+    LAKE_DIM_TIME,
+    LAKE_DIM_SONGPLAY
     )
 from udf.datetimeudf import _add_date_time_columns_to_df
 from schemas import (
@@ -17,7 +20,8 @@ from schemas import (
     dim_artist_schema,
     log_src_schema,
     dim_time_schema,
-    dim_user_schema
+    dim_user_schema,
+    songplay_src_schema
     )
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
@@ -80,10 +84,10 @@ def process_song_data(sparkSession, input_data, output_data):
     # song_df = song_df.dropDuplicates()
 
     # total rows: 14896
-    print(song_df.take(1))
+    print(song_df.show(1))
 
     # nPartitions = song_df.rdd.getNumPartitions()
-    song_df = song_df.repartition(8)
+    song_df = song_df.repartition(7)
     # nPartitions = song_df.rdd.getNumPartitions()
 
     # extract columns to create songs table
@@ -102,7 +106,7 @@ def process_song_data(sparkSession, input_data, output_data):
     # extract columns to create artists table
     artists_table = song_df.select(dim_artist_schema.names)
 
-    print(artists_table.take(1))
+    print(artists_table.show(1))
 
     # remove duplicates resulting in 10025 rows
     artists_table = artists_table.dropDuplicates()
@@ -141,7 +145,6 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
             dim_song.year as song_year,
             dim_song.duration as song_duration,
             dim_artist.*,
-            'stage_events=>' as stage_events,
             stage_events.ts as start_time,
             stage_events.userId as user_id,
             stage_events.firstName as first_name,
@@ -157,9 +160,14 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
             stage_events.month,
             stage_events.year,
             stage_events.weekday,
-            stage_events.page
+            stage_events.page,
+            stage_events.sessionId,
+            stage_events.location,
+            stage_events.userAgent
         FROM dim_song
-        LEFT JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
+        LEFT JOIN dim_artist ON (
+            dim_artist.artist_id = dim_song.artist_id
+            )
         RIGHT JOIN stage_events ON (
             dim_song.title = stage_events.song
             AND dim_artist.artist_name = stage_events.artist
@@ -167,48 +175,53 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
         WHERE stage_events.page='NextSong'
         ;""")
 
+    df.cache()
+
     # stage_events total: 6820
     print("stage_events total: " + str(df.count()))
-    print(df.take(1))
-
-    dim_time_df = df.select(dim_time_schema.names).dropDuplicates()
-    # dim time table: 6813
-    print("dim time table: " + str(dim_time_df.count()))
-    print(dim_time_df.take(1))
-
-    # todo: add song_id and artist_id to songplay events
-    # join tables to log_df, dt são imutáveis
-    # fazer um test de sql com joing pra ver se funciona
-    # https://review.udacity.com/#!/rubrics/2502/view
+    print(df.show(1))
 
     # extract columns for users table
-    users_table = "todo"
+    users_table = df.select(dim_user_schema.names).dropDuplicates()
+    print("users_table total: " + str(users_table.count()))
+    print(users_table.show(1))
+
+    compression = "snappy"
 
     # write users table to parquet files
-    users_table
+    user_path = output_data + LAKE_DIM_USER
+    users_table.write.parquet(
+        path=user_path,
+        compression=compression,
+        mode="overwrite")
 
     # create timestamp column from original timestamp column
-    get_timestamp = udf()
-    df = "todo"
+    dim_time_df = df.select(dim_time_schema.names).dropDuplicates()
 
-    # create datetime column from original timestamp column
-    get_datetime = udf()
-    df = "todo"
-
-    # extract columns to create time table
-    time_table = "todo"
+    # dim time table: 6813
+    print("dim time table: " + str(dim_time_df.count()))
+    print(dim_time_df.show(1))
 
     # write time table to parquet files partitioned by year and month
-    time_table = "todo"
-
-    # read in song data to use for songplays table
-    song_df = "todo"
+    time_path = output_data + LAKE_DIM_TIME
+    dim_time_df.write.parquet(
+        path=time_path,
+        partitionBy=["year", "month"],
+        compression=compression,
+        mode="overwrite")
 
     # extract columns from joined song and log datasets to create songplays table
-    songplays_table = "todo"
+    songplays_table = df.select(songplay_src_schema.names)
+    print("songplays_table total: " + str(songplays_table.count()))
+    print(songplays_table.show(1))
 
     # write songplays table to parquet files partitioned by year and month
-    songplays_table
+    song_plays_path = output_data + LAKE_DIM_SONGPLAY
+    songplays_table.write.parquet(
+        path=song_plays_path,
+        partitionBy=["year", "month"],
+        compression=compression,
+        mode="overwrite")
 
 
 def main():
