@@ -21,7 +21,9 @@ from schemas import (
     log_src_schema,
     dim_time_schema,
     dim_user_schema,
-    songplay_src_schema
+    fact_songplays_schema,
+    event_src_schema_to_dw_schema,
+    artist_src_schema_to_dw_schema
     )
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
@@ -72,16 +74,13 @@ def process_song_data(sparkSession, input_data, output_data):
     # read song data file using dataframe api
     # All built-in file sources (including Text/CSV/JSON/ORC/Parquet) are able
     # to discover and infer partitioning information automatically, but the
-    # paritions needs to be in the format key=value, which is not that case.
+    # partitions needs to be in the format key=value, which is not that case.
     song_df = sparkSession.read.json(
         path=song_source,
         schema=song_src_schema,
         recursiveFileLookup=True)
 
     song_df.printSchema()
-
-    # does not make efect in song_df
-    # song_df = song_df.dropDuplicates()
 
     # total rows: 14896
     print(song_df.show(1))
@@ -90,7 +89,7 @@ def process_song_data(sparkSession, input_data, output_data):
     song_df = song_df.repartition(7)
     # nPartitions = song_df.rdd.getNumPartitions()
 
-    # extract columns to create songs table
+    # extract columns to create dim songs table
     songs_table = song_df.select(dim_song_schema.names)
 
     # write songs table to parquet files partitioned by year and artist
@@ -104,8 +103,11 @@ def process_song_data(sparkSession, input_data, output_data):
         mode="overwrite")
 
     # extract columns to create artists table
+    song_df = artist_src_schema_to_dw_schema(song_df)
     artists_table = song_df.select(dim_artist_schema.names)
 
+    # artists_table total before dropDuplicates: 14896
+    print("artists_table total before dropDuplicates: " + str(artists_table.count()))
     print(artists_table.show(1))
 
     # remove duplicates resulting in 10025 rows
@@ -123,54 +125,34 @@ def process_song_data(sparkSession, input_data, output_data):
     return (broadcast(songs_table), broadcast(artists_table))
 
 
-def process_log_data(sparkSession, input_data, output_data, songs_table, artists_table):
+def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist):
     # get filepath to log data file
     log_data = input_data + LOG_DATA
 
     # read log data file
-    log_df = sparkSession.read.json(
+    event_df = sparkSession.read.json(
         path=log_data,
         schema=log_src_schema,
         recursiveFileLookup=True)
 
-    log_df = _add_date_time_columns_to_df(log_df)
-    log_df.createOrReplaceTempView("stage_events")
-    songs_table.createOrReplaceTempView("dim_song")
-    artists_table.createOrReplaceTempView("dim_artist")
+    event_df = _add_date_time_columns_to_df(event_df)
+    event_df = event_src_schema_to_dw_schema(event_df)
+    event_df.createOrReplaceTempView("stage_events")
+    dim_song.createOrReplaceTempView("dim_song")
+    dim_artist.createOrReplaceTempView("dim_artist")
 
     df = sparkSession.sql("""
         SELECT
             dim_song.song_id,
-            dim_song.title as song_title,
-            dim_song.year as song_year,
-            dim_song.duration as song_duration,
-            dim_artist.*,
-            stage_events.ts as start_time,
-            stage_events.userId as user_id,
-            stage_events.firstName as first_name,
-            stage_events.lastName as last_name,
-            stage_events.gender,
-            stage_events.level,
-            stage_events.song,
-            stage_events.artist,
-            stage_events.event_date,
-            stage_events.hour,
-            stage_events.day,
-            stage_events.week,
-            stage_events.month,
-            stage_events.year,
-            stage_events.weekday,
-            stage_events.page,
-            stage_events.sessionId,
-            stage_events.location,
-            stage_events.userAgent
+            dim_artist.artist_id,
+            stage_events.*
         FROM dim_song
         LEFT JOIN dim_artist ON (
             dim_artist.artist_id = dim_song.artist_id
             )
         RIGHT JOIN stage_events ON (
             dim_song.title = stage_events.song
-            AND dim_artist.artist_name = stage_events.artist
+            AND dim_artist.name = stage_events.artist
         )
         WHERE stage_events.page='NextSong'
         ;""")
@@ -182,42 +164,42 @@ def process_log_data(sparkSession, input_data, output_data, songs_table, artists
     print(df.show(1))
 
     # extract columns for users table
-    users_table = df.select(dim_user_schema.names).dropDuplicates()
-    print("users_table total: " + str(users_table.count()))
-    print(users_table.show(1))
+    dim_user = df.select(dim_user_schema.names).dropDuplicates()
+    print("dim_user total: " + str(dim_user.count()))
+    print(dim_user.show(1))
 
     compression = "snappy"
 
     # write users table to parquet files
     user_path = output_data + LAKE_DIM_USER
-    users_table.write.parquet(
+    dim_user.write.parquet(
         path=user_path,
         compression=compression,
         mode="overwrite")
 
     # create timestamp column from original timestamp column
-    dim_time_df = df.select(dim_time_schema.names).dropDuplicates()
+    dim_time = df.select(dim_time_schema.names).dropDuplicates()
 
     # dim time table: 6813
-    print("dim time table: " + str(dim_time_df.count()))
-    print(dim_time_df.show(1))
+    print("dim time table: " + str(dim_time.count()))
+    print(dim_time.show(1))
 
     # write time table to parquet files partitioned by year and month
     time_path = output_data + LAKE_DIM_TIME
-    dim_time_df.write.parquet(
+    dim_time.write.parquet(
         path=time_path,
         partitionBy=["year", "month"],
         compression=compression,
         mode="overwrite")
 
     # extract columns from joined song and log datasets to create songplays table
-    songplays_table = df.select(songplay_src_schema.names)
-    print("songplays_table total: " + str(songplays_table.count()))
-    print(songplays_table.show(1))
+    fact_songplays = df.select(fact_songplays_schema.names)
+    print("fact_songplays total: " + str(fact_songplays.count()))
+    print(fact_songplays.show(1))
 
     # write songplays table to parquet files partitioned by year and month
     song_plays_path = output_data + LAKE_DIM_SONGPLAY
-    songplays_table.write.parquet(
+    fact_songplays.write.parquet(
         path=song_plays_path,
         partitionBy=["year", "month"],
         compression=compression,
