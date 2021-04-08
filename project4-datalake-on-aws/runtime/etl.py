@@ -30,6 +30,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import broadcast
 from pyspark.sql.window import Window
 from pyspark.sql.functions import udf, col, row_number
+from pyspark.sql.types import (IntegerType)
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
@@ -135,13 +136,17 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
         schema=log_src_schema,
         recursiveFileLookup=True)
 
+    # add datetime columns and rename columns to dw format
     event_df = _add_date_time_columns_to_df(event_df)
     event_df = event_src_schema_to_dw_schema(event_df)
+
+    # create temp views
     event_df.createOrReplaceTempView("stage_events")
     dim_song.createOrReplaceTempView("dim_song")
     dim_artist.createOrReplaceTempView("dim_artist")
 
-    df = sparkSession.sql("""
+    # Create a dataframe with song plays data
+    event_df = sparkSession.sql("""
         SELECT
             dim_song.song_id,
             dim_artist.artist_id,
@@ -157,16 +162,11 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
         WHERE stage_events.page='NextSong'
         ;""")
 
-    df.cache()
-
-    # stage_events total: 6820
-    print("stage_events total: " + str(df.count()))
-    print(df.show(1))
+    event_df = event_df.withColumn("user_id", event_df["user_id"].cast(IntegerType()))
+    event_df.cache()
 
     # extract columns for users table
-    dim_user = df.select(dim_user_schema.names).dropDuplicates()
-    print("dim_user total: " + str(dim_user.count()))
-    print(dim_user.show(1))
+    dim_user = event_df.select(dim_user_schema.names).dropDuplicates()
 
     compression = "snappy"
 
@@ -178,11 +178,7 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
         mode="overwrite")
 
     # create timestamp column from original timestamp column
-    dim_time = df.select(dim_time_schema.names).dropDuplicates()
-
-    # dim time table: 6813
-    print("dim time table: " + str(dim_time.count()))
-    print(dim_time.show(1))
+    dim_time = event_df.select(dim_time_schema.names).dropDuplicates()
 
     # write time table to parquet files partitioned by year and month
     time_path = output_data + LAKE_DIM_TIME
@@ -193,9 +189,7 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
         mode="overwrite")
 
     # extract columns from joined song and log datasets to create songplays table
-    fact_songplays = df.select(fact_songplays_schema.names)
-    print("fact_songplays total: " + str(fact_songplays.count()))
-    print(fact_songplays.show(1))
+    fact_songplays = event_df.select(fact_songplays_schema.names)
 
     # write songplays table to parquet files partitioned by year and month
     song_plays_path = output_data + LAKE_DIM_SONGPLAY
@@ -204,6 +198,12 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
         partitionBy=["year", "month"],
         compression=compression,
         mode="overwrite")
+
+    # dim_user total: 104
+    # stage_events total: 6820
+    # fact_songplays total: 6820
+    # print("fact_songplays total: " + str(fact_songplays.count()))
+    # print(fact_songplays.show(1))
 
 
 def main():

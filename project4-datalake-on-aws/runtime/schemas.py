@@ -47,11 +47,11 @@ log_src_schema.add("method", StringType(), True)
 log_src_schema.add("page", StringType(), True)
 log_src_schema.add("registration", LongType(), True)
 log_src_schema.add("sessionId", IntegerType(), True)
-log_src_schema.add("song", StringType(), True) # evaluate if rename to title or not
+log_src_schema.add("song", StringType(), True)
 log_src_schema.add("status", ShortType(), True)
 log_src_schema.add("ts", LongType(), True)
 log_src_schema.add("userAgent", StringType(), True)
-log_src_schema.add("userId", IntegerType(), True)
+log_src_schema.add("userId", StringType(), True)
 
 
 def event_src_schema_to_dw_schema(df):
