@@ -74,7 +74,7 @@ This concept is equivalent to a table in a relational database and it's easer do
 
 __S3A client__
 
-S3A client support were used for perfomance improvement, Hadoop’s “S3A” client offers high-performance IO against Amazon S3 object store and compatible implementations.
+S3A client support were used for perfomance improvement, Hadoop’s “S3A” client offers high-performance IO against Amazon S3 object store and compatible implementations. Only S3A is actively maintained by the Hadoop project itself.
 
 ### table's partitions:
 
@@ -96,13 +96,24 @@ git clone https://github.com/paulo3011/sparkfy.git
 cd ~/projects/paulo3011/sparkfy/project4-datalake-on-aws/runtime/
 ```
 
-3. Configure aws s3 credentials and path's:
+3. Install pyspark if necessary:
+
+```shell
+# create a virtual env to avoid permission problems and to isolate packages
+python -m venv env
+source ./env/bin/activate
+# https://pip.pypa.io/en/stable/reference/pip_install/#options
+# --user: Install to the Python user install directory for your platform. Typically ~/.local/, or %APPDATA%Python on Windows. (See the Python documentation for site.USER_BASE for full details.)
+pip install pyspark==3.1.1 --user
+```
+
+4. Configure aws s3 credentials and path's:
 
 Configure the necessary settings in the file:
 
 - project4-datalake-on-aws/runtime/dl.cfg
 
-4. Execute de python script
+5. Execute de python script
 
 ```shell
 python etl.py
