@@ -96,7 +96,13 @@ git clone https://github.com/paulo3011/sparkfy.git
 cd ~/projects/paulo3011/sparkfy/project4-datalake-on-aws/runtime/
 ```
 
-3. Execute de python script
+3. Configure aws s3 credentials and path's:
+
+Configure the necessary settings in the file:
+
+- project4-datalake-on-aws/runtime/dl.cfg
+
+4. Execute de python script
 
 ```shell
 python etl.py
