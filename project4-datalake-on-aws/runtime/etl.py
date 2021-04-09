@@ -208,10 +208,11 @@ def process_log_data(sparkSession, input_data, output_data, dim_song, dim_artist
 
 def main():
     spark = create_spark_session()
-    # input_data = "s3a://moreira-ud/udacity-dend/"
-    input_data = "/home/paulo/projects/paulo3011/sparkfy/data/"
-    # s3a://moreira-ud/lake/
-    output_data = "/tmp/spark/sparkfy/lake/"
+    # Hadoop’s “S3A” client offers high-performance IO against Amazon S3 object store and compatible implementations
+    input_data = "s3a://moreira-ud/udacity-dend/"
+    output_data = "s3a://moreira-ud/lake/"
+    # input_data = "/home/paulo/projects/paulo3011/sparkfy/data/"
+    # output_data = "/tmp/spark/sparkfy/lake/"
 
     songs_table, artists_table = process_song_data(spark, input_data, output_data)
     process_log_data(spark, input_data, output_data, songs_table, artists_table)
