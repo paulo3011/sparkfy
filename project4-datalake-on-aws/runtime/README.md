@@ -6,17 +6,20 @@
 
 # Discussion and decisions for this ETL pipeline
 
-## 1. The purpose of this database in context of the startup, Sparkify, and their analytical goals.
+## 1. The purpose of this data lake in context of the startup, Sparkify, and their analytical goals.
 
 __Introduction__
 
 A music streaming startup, Sparkify, has grown their user base and song database even more and want to move their data warehouse to a data lake. Their data resides in S3, in a directory of JSON logs on user activity on the app, as well as a directory with JSON metadata on the songs in their app.
 
-This project create an ETL pipeline for a data lake hosted on S3 that extracts their data from S3, processes them using Spark, and loads the data back into S3 as a set of dimensional tables. This will allow their analytics team to continue finding insights in what songs their users are listening to.
+This project create an ETL pipeline for a data lake hosted on S3 that extracts their data from S3, processes them using Spark, and loads the data back into S3 as a set of dimensional and fact tables. This will allow their analytics team to continue finding insights in what songs their users are listening to.
 
 __Questions to anwser__
 
 - What songs users are listening to?
+- How many paying users are there?
+- How many users downgraded the plan in the month?
+- and others..
 
 __Project Datasets__
 
@@ -25,7 +28,7 @@ __Project Datasets__
 
 ## Song Dataset
 
-The first dataset is a subset of real data from the Million Song Dataset. Each file is in JSON format and contains metadata about a song and the artist of that song. The files are partitioned by the first three letters of each song's track ID. For example, here are filepaths to two files in this dataset.
+The first dataset is a subset of real data from the Million Song Dataset. Each file is in JSON format and contains metadata about a song and the artist of that song. The files are partitioned by the first three letters of each song's track ID. For example, here are filepaths to two files in this dataset:
 
 ```txt
 song_data/A/B/C/TRABCEI128F424C983.json
@@ -62,276 +65,41 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 ![dw schema](./assets/images/sparkfy_dw_schema.jpg)
 
 
-### fact_songplay table
+### Resources in use:
 
-Distribution key and sortkey for this table was made based on:
+__DataFrames__
 
-SAMPLE QUESTIONS:
+The dataframe api were used because internally spark can do richer optimizations under the hood.
+This concept is equivalent to a table in a relational database and it's easer do some joins, select or agregation using SQL and dataframe api.
 
-0. What songs users are listening to? (Currently, they don't have an easy way to query their data)
+__S3A client__
 
-```sql
-SORTKEY (song_id, user_id)
+S3A client support were used for perfomance improvement, Hadoop’s “S3A” client offers high-performance IO against Amazon S3 object store and compatible implementations.
+
+### table's partitions:
+
+- Songs table files are partitioned by year and then artist
+- Time table files are partitioned by year and month
+- Songplays table files are partitioned by year and month
+
+# How to run
+
+1. Clone this repository to your local machine
+
+```shell
+git clone https://github.com/paulo3011/sparkfy.git
 ```
 
-1. Give me the artist, song title and song's length in the music app history that was heard during sessionId = 338, and itemInSession = 4
+2. Enter on the directory on that were cloned the repository:
 
-```sql
-SORTKEY (song_id, session_id)
+```shell
+cd ~/projects/paulo3011/sparkfy/project4-datalake-on-aws/runtime/
 ```
 
-2. Give me only the following: name of artist, song (sorted by itemInSession) and user (first and last name) for userid = 10, sessionid = 182
+3. Execute de python script
 
-```sql
-SORTKEY (song_id, user_id, session_id)
-```
-
-3. Give me every user name (first and last) in my music app history who listened to the song 'All Hands Against His Own'
-
-```sql
-SORTKEY (song_id, user_id)
-```
-
-At the end was built
-
-```sql
-CREATE TABLE IF NOT EXISTS fact_songplays
-(
-    songplay_id bigint IDENTITY(0,1) NOT NULL
-    ,start_time bigint      REFERENCES dim_time (start_time)
-    ,user_id integer        REFERENCES dim_user (user_id)
-    ,level varchar(4)       -- paid or free
-    ,song_id varchar(30)    NULL REFERENCES dim_song (song_id)
-    ,artist_id varchar(30)  NULL REFERENCES dim_artist (artist_id)
-    ,session_id integer
-    ,location varchar(255)
-    ,user_agent varchar(400)
-    ,PRIMARY KEY (songplay_id)
-)
-DISTSTYLE KEY
-DISTKEY (song_id)
-COMPOUND SORTKEY (start_time, song_id, user_id, session_id)
-```
-
-This table use the above distkey and sort key because:
-
-- SORTKEY considerations:
-    - It's often necessary to filter data by date and time, so sort by start_time will help to accelarate the queries that filter by date and time because redshift will be able to skip blocks that fall outside the time range
-    - I choose COMPOUND because the data will be sorted in the same order that the sortkey columns and the table filter will be probably done by sortkey columns and the type INTERLEAVED isn't a good choose for columns like datetime and autoincrements id's
-
-- DISTKEY consideration:
-    - By start_time is not a good because. Performance and parallelism may decrease depending on the data period fetched. For example, data for an entire month can be in a single slice (cpu)
-    - We can have just one distkey per table, and the best practices tells to us to choose based on how frequently it is joined and the size of the joining rows.
-    - If i filter by date, the highest cardinality on the result set will be users. The ids of songs will be restricted. But we don't need to now the users name or something like that, we need to answer questions about songs and artists. So the most frequent join will be with songs.
-    - Spotfy has about 70 million of tracks (https://newsroom.spotify.com/company-info/), so we have a good cardinality to use this a distkey
-    - Population is about 7.594 billion
-
-
-### Notes about inserts
-
-1. fact_songplays
-
-To find identification for song and artists in event data was made:
-
-```sql
-ALTER TABLE stage_events ADD COLUMN song_id varchar(30);
-ALTER TABLE stage_events ADD COLUMN artist_id varchar(30);
-
-UPDATE stage_events
-  SET song_id = dim_song.song_id,
-  artist_id = dim_song.artist_id
-FROM dim_song
-JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
-WHERE
-  dim_song.title = BTRIM(stage_events.song)
-  and dim_artist.name = BTRIM(stage_events.artist)
-  and dim_song.duration = stage_events.length
-;
--- update rows 307
-
-UPDATE stage_events
-  SET song_id = dim_song.song_id,
-  artist_id = dim_song.artist_id
-FROM dim_song
-JOIN dim_artist ON (dim_artist.artist_id = dim_song.artist_id)
-WHERE
-  dim_song.title = BTRIM(stage_events.song)
-  AND dim_artist.name = BTRIM(stage_events.artist)
-  AND (stage_events.artist_id is null or stage_events.song_id is null)
-;
---UPDATED ROWS 14
-```
-
-This decision was done because:
-
-- Can exists the same song title belonging to diferente artists like song hello
-- Was found spaces in song's titles and artist's names, so was used BTRIM during inserts and in this query
-- The first updade is better because match 3 fields of song (title,artist name and song length)
-- There are more problems with the dataset, but only those mentioned above were addressed, following the requirements of the project
-
-
-
-## 3. Example queries and results for song play analysis.
-
-### What songs users are listening to? (Currently, they don't have an easy way to query their data)
-
-```sql
-SELECT
-	DISTINCT
-	s.title
-	,a."name" as artist_name
-FROM fact_songplays ev
-JOIN dim_song s on (s.song_id = ev.song_id)
-JOIN dim_artist a on (a.artist_id = s.artist_id)
-LIMIT 5
-;
-
-/*
-title                                |artist_name|
--------------------------------------|-----------|
-One Year_ Six Months                 |Yellowcard |
-Please Don't Go                      |No Mercy   |
-Setanta matins                       |Elena      |
-English Summer Rain                  |Placebo    |
-Revolution Deathsquad (Album Version)|Dragonforce|
-*/
-```
-
-### Give me only the following: name of artist, song (sorted by itemInSession) and user (first and last name) for userid = 10, sessionid = 182
-
-```sql
-
-SELECT
-	s.title
-	,a."name" as artist_name
-FROM fact_songplays ev
-JOIN dim_song s on (s.song_id = ev.song_id)
-JOIN dim_user u on (u.user_id = ev.user_id)
-JOIN dim_artist a on (a.artist_id = s.artist_id)
-WHERE
-	ev.session_id = 182
-	and ev.user_id = 10
-ORDER BY
-	ev.start_time
-	,u.first_name
-	,u.last_name
-;
-
-
-/*
-title                                               |artist_name  |
-----------------------------------------------------|-------------|
-Catch You Baby (Steve Pitron & Max Sanna Radio Edit)|Lonnie Gordon|
-*/
-```
-
-### Total music listened to per month
-
-```sql
-
-SELECT
-	t."year"
-	,t."month"
-	,count(0) as total
-FROM fact_songplays ev
-JOIN dim_time t ON (t.start_time = ev.start_time)
-GROUP BY
-	t."year"
-	,t."month"
-ORDER BY
-	t."year" DESC
-	,t."month" DESC
-;
-
-
-
-/*
-year|month|total|
-----|-----|-----|
-2018|   11| 6839|
-*/
-```
-
-### Totals
-
-```sql
-select
-	(select count(0) from (select DISTINCT ts AS start_time from stage_events where page='NextSong')) as total_time_on_events
-	,(select count(0) from (select DISTINCT userid from stage_events where page='NextSong')) as total_users_on_events
-	,(select count(0) from (select DISTINCT song_id, artist_id from stage_songs)) as total_songs_on_songdata
-	,(select count(0) from (select DISTINCT song_id from stage_songs)) as total_songsid_on_songdata
-	,(select count(0) from (select DISTINCT artist_id from stage_songs)) as total_artist_on_songdata
-	,(select sum(duration) from stage_songs) as total_song_duration_on_songdata
-	,(select sum(duration) from dim_song) as total_song_duration_on_dimsong
-;
-
-/*
-Name                           |Value         |
--------------------------------|--------------|
-total_time_on_events           |6813          |
-total_users_on_events          |96            |
-total_songs_on_songdata        |14896         |
-total_songsid_on_songdata      |14896         |
-total_artist_on_songdata       |9553          |
-total_song_duration_on_songdata|3676025.85291 |
-total_song_duration_on_dimsong |3676025.852910|
- */
-```
-
-
-```sql
-SELECT
-	(SELECT COUNT(0) FROM dim_artist)  AS total_artists
-	,(SELECT COUNT(0) FROM dim_song)  AS total_songs
-	,(SELECT COUNT(0) FROM dim_user)  AS total_users
-	,(SELECT COUNT(0) FROM dim_time)  AS total_time
-	,(SELECT COUNT(0) FROM stage_events)  AS stage_events
-	,(SELECT COUNT(0) FROM stage_songs)  AS stage_songs
-	,(select count(0) FROM fact_songplays where song_id > 0) AS total_with_song_id
-;
-
-/*
-Name              |Value|
-------------------|-----|
-total_artists     |9553 |
-total_songs       |14896|
-total_users       |96   |
-total_time        |6813 |
-stage_events      |8056 |
-stage_songs       |14896|
-total_with_song_id|305  |
-*/
-```
-
-#### Song and artists problems
-
-```sql
-select
-(
-	SELECT COUNT(0)
-	FROM stage_events ev
-	LEFT JOIN dim_song s ON (BTRIM(s.title) = BTRIM(ev.song))
-	WHERE s.title is null
-) as songtitle_in_events_and_not_in_songdataset
-,
-(
-	SELECT COUNT(0)
-	FROM stage_events ev
-	LEFT JOIN dim_artist a ON (BTRIM(a."name") = BTRIM(ev.artist))
-	WHERE a."name" is null
-) as artist_name_in_events_and_not_in_songdataset
-,(
-	SELECT COUNT(0) FROM fact_songplays WHERE song_id IS NULL OR artist_id IS NULL
-) AS fact_events_without_songid_and_artistid
-;
-
-/*
-Name                                        |Value|
---------------------------------------------|-----|
-songtitle_in_events_and_not_in_songdataset  |7246 |
-artist_name_in_events_and_not_in_songdataset|3886 |
-fact_events_without_songid_and_artistid     |7751 |
-*/
+```shell
+python etl.py
 ```
 
 # Settings in use
@@ -344,15 +112,27 @@ Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/inde
 
 ## spark.jars.packages
 
-Comma-separated list of Maven coordinates of jars to include on the driver and executor classpaths. The coordinates should be groupId:artifactId:version. If spark.jars.ivySettings is given artifacts will be resolved according to the configuration in the file, otherwise artifacts will be searched for in the local maven repo, then maven central and finally any additional remote repositories given by the command-line option --repositories.
+Comma-separated list of Maven coordinates of jars to include on __the driver and executor classpaths__. The coordinates should be groupId:artifactId:version. If spark.jars.ivySettings is given artifacts will be resolved according to the configuration in the file, otherwise artifacts will be searched for in the local maven repo, then maven central and finally any additional remote repositories given by the command-line option --repositories.
 
 Seealso: https://spark.apache.org/docs/latest/configuration.html
 
 ## org.apache.hadoop:hadoop-aws
 
-This jar is used to include S3A client suport.
+This jar is used to include S3A client support.
 
 Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html
+
+## spark.sql.adaptive.enabled
+
+This feature coalesces the post shuffle partitions based on the map output statistics when both spark.sql.adaptive.enabled and spark.sql.adaptive.coalescePartitions.enabled configurations are true. This feature simplifies the tuning of shuffle partition number when running queries. You do not need to set a proper shuffle partition number to fit your dataset. Spark can pick the proper shuffle partition number at runtime once you set a large enough initial number of shuffle partitions via spark.sql.adaptive.coalescePartitions.initialPartitionNum configuration
+
+## spark.sql.adaptive.coalescePartitions.enabled
+
+When true and spark.sql.adaptive.enabled is true, Spark will coalesce contiguous shuffle partitions according to the target size (specified by spark.sql.adaptive.advisoryPartitionSizeInBytes), to avoid too many small tasks.
+
+## spark.sql.adaptive.skewJoin.enabled
+
+When true and spark.sql.adaptive.enabled is true, Spark dynamically handles skew in sort-merge join by splitting (and replicating if needed) skewed partitions.
 
 # References
 
@@ -369,3 +149,4 @@ Seealso: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/inde
 - https://www.slideshare.net/databricks/introducing-dataframes-in-spark-for-large-scale-data-science (logical plan)
 - https://commons.wikimedia.org/wiki/File:SQL_Joins.svg
 - https://spark.apache.org/docs/3.1.1/api/python/reference/pyspark.sql.html#functions
+- https://spark.apache.org/docs/latest/sql-performance-tuning.html#adaptive-query-execution

@@ -28,8 +28,6 @@ from schemas import (
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import broadcast
-from pyspark.sql.window import Window
-from pyspark.sql.functions import udf, col, row_number
 from pyspark.sql.types import (IntegerType)
 
 config = configparser.ConfigParser()
@@ -45,6 +43,9 @@ conf = SparkConf() \
        .setAppName("UDACITY_ETL") \
        .set("fs.s3a.multipart.size", "104M") \
        .set("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.1.1") \
+       .set("spark.sql.adaptive.enabled", "true") \
+       .set("spark.sql.adaptive.coalescePartitions.enabled", "true") \
+       .set("spark.sql.adaptive.skewJoin.enabled", "true") \
        .setMaster("local[*]")
 
 
@@ -63,11 +64,6 @@ def create_spark_session():
     return spark
 
 
-def _to_lowercase(input):
-    input["title"] = input["title"].lower()
-    return input
-
-
 def process_song_data(sparkSession, input_data, output_data):
 
     song_source = input_data + SONG_DATA
@@ -81,17 +77,18 @@ def process_song_data(sparkSession, input_data, output_data):
         schema=song_src_schema,
         recursiveFileLookup=True)
 
-    song_df.printSchema()
+    # song_df.printSchema()
 
     # total rows: 14896
-    print(song_df.show(1))
+    # print(song_df.show(1))
 
     # nPartitions = song_df.rdd.getNumPartitions()
-    song_df = song_df.repartition(7)
+    # song_df = song_df.repartition(7)
     # nPartitions = song_df.rdd.getNumPartitions()
 
     # extract columns to create dim songs table
     songs_table = song_df.select(dim_song_schema.names)
+    songs_table.cache()
 
     # write songs table to parquet files partitioned by year and artist
     # http://spark.apache.org/docs/3.1.1/api/python/reference/api/pyspark.sql.DataFrameWriter.parquet.html#pyspark.sql.DataFrameWriter.parquet
@@ -106,10 +103,11 @@ def process_song_data(sparkSession, input_data, output_data):
     # extract columns to create artists table
     song_df = artist_src_schema_to_dw_schema(song_df)
     artists_table = song_df.select(dim_artist_schema.names)
+    artists_table.cache()
 
     # artists_table total before dropDuplicates: 14896
-    print("artists_table total before dropDuplicates: " + str(artists_table.count()))
-    print(artists_table.show(1))
+    # print("artists_table total before dropDuplicates: " + str(artists_table.count()))
+    # print(artists_table.show(1))
 
     # remove duplicates resulting in 10025 rows
     artists_table = artists_table.dropDuplicates()
