@@ -29,7 +29,7 @@ __Project Datasets__
 
 ## 2. Database schema design and ETL pipeline defense.
 
-![dw schema](./assets/images/sparkfy_dw_schema.png)
+![dw schema](./runtime/assets/images/sparkfy_dw_schema.png)
 
 
 ### fact_songplay table

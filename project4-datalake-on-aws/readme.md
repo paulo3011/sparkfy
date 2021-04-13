@@ -64,7 +64,7 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 
 ## 2. Database schema design and ETL pipeline defense.
 
-![dw schema](./assets/images/sparkfy_dw_schema.jpg)
+![dw schema](./runtime/assets/images/sparkfy_dw_schema.jpg)
 
 
 ### Resources in use:
