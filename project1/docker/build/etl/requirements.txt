@@ -1,11 +1,1 @@
 typing_extensions
-psycopg2
-pandas
-petl
-
-# virtualenv needs
-# https://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html
-# apt-get install build-essential -y
-# apt-get install python3-dev -y
-# apt-get install libpq-dev -y
-# seealso: http://web.archive.org/web/20140615091953/http://goshawknest.wordpress.com/2011/02/16/how-to-install-psycopg2-under-virtualenv/

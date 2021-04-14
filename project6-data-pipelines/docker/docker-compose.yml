@@ -1,0 +1,47 @@
+version: '3.7'
+services:
+    # https://hub.docker.com/_/postgres
+    postgresql:
+        container_name: sparkify-pgsql
+        image: postgres:13
+        environment:
+            - POSTGRES_DB=airflow_db
+            - POSTGRES_USER=airflow_user
+            - POSTGRES_PASSWORD=airflow_pass
+        #volumes:
+            # - ./initdb/postgres:/docker-entrypoint-initdb.d
+        logging:
+            options:
+                max-size: 10m
+                max-file: "3"
+        ports:
+            - 5432:5432
+        networks:
+          - sparkify_airflow
+
+    airflow_webserver:
+        container_name: airflow-v2.0.1
+        image: apache/airflow:2.0.1-python3.8
+        volumes:
+            # You can also embed your dags in the image by simply adding them with COPY directive of Airflow. The DAGs in production image are in /opt/airflow/dags folder.
+            - ../runtime/dags:/opt/airflow/dags
+            - ../runtime/plugins:/opt/airflow/plugins
+        command: bash -c "airflow db init && airflow webserver && airflow users create --username admin --password admin --role Admin --firstname FIRST_NAME --lastname LAST_NAME --email admin@example.org & airflow scheduler"
+        depends_on:
+            - postgresql
+        environment:
+            # https://airflow.apache.org/docs/apache-airflow/stable/howto/set-config.html
+            - LOAD_EX=n
+            # https://airflow.apache.org/docs/apache-airflow/stable/howto/set-up-database.html
+            - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_user:airflow_pass@postgresql:5432/airflow_db
+            - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+            # How often (in seconds) to scan the DAGs directory for new files. Default to 5 minutes.
+            - AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL=30
+        ports:
+            - "8080:8080"
+        networks:
+          - sparkify_airflow
+
+# https://docs.docker.com/compose/networking/
+networks:
+    sparkify_airflow:
