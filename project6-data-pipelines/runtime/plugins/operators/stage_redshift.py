@@ -1,5 +1,4 @@
-"""
-from airflow.hooks.postgres_hook import PostgresHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
@@ -20,4 +19,3 @@ class StageToRedshiftOperator(BaseOperator):
 
     def execute(self, context):
         self.log.info('StageToRedshiftOperator not implemented yet')
-"""

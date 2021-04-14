@@ -1,11 +1,11 @@
-"""
+
 from datetime import datetime, timedelta
 import os
 from airflow import DAG
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
-from helpers import SqlQueries
+from airflow.operators.dummy import DummyOperator
+from custom_operator.hello_operator import HelloOperator
+from operators.stage_redshift import (StageToRedshiftOperator)
+from helpers.sql_queries import SqlQueries
 
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
@@ -33,6 +33,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     dag=dag
 )
 
+"""
 load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag

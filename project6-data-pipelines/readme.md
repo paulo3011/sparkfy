@@ -76,6 +76,72 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 ![dw schema](./runtime/assets/images/sparkfy_dw_schema.jpg)
 
 
+# Run the code
+
+1. Start the airflow using docker-compose
+
+```shell
+docker-compose up -d
+```
+2. start the scheduler
+
+```shell
+docker exec -it airflow-v2.0.1 bash
+airflow scheduler
+```
+
+# Airflow cli commands
+
+```shell
+usage: airflow [-h] GROUP_OR_COMMAND ...
+
+positional arguments:
+  GROUP_OR_COMMAND
+
+    Groups:
+      celery         Celery components
+      config         View configuration
+      connections    Manage connections
+      dags           Manage DAGs
+      db             Database operations
+      kubernetes     Tools to help run the KubernetesExecutor
+      pools          Manage pools
+      providers      Display providers
+      roles          Manage roles
+      tasks          Manage tasks
+      users          Manage users
+      variables      Manage variables
+
+    Commands:
+      cheat-sheet    Display cheat sheet
+      info           Show information about current Airflow and environment
+      kerberos       Start a kerberos ticket renewer
+      plugins        Dump information about loaded plugins
+      rotate-fernet-key
+                     Rotate encrypted connection credentials and variables
+      scheduler      Start a scheduler instance
+      sync-perm      Update permissions for existing roles and DAGs
+      version        Show the version
+      webserver      Start a Airflow webserver instance
+
+optional arguments:
+  -h, --help         show this help message and exit
+```
+
+To test load and run the dag file you can use:
+
+```shell
+# airflow dags test [dag_id] 2021-04-13
+# sample:
+airflow dags test hello_world 2021-04-13
+```
+
+To check if some dag file is without error you can do:
+
+```shell
+docker exec -it airflow-v2.0.1 bash
+python dags/udac_example_dag.py
+```
 
 # References
 
