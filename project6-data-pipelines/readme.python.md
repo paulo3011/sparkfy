@@ -54,4 +54,19 @@
     PYTHONPATH=./src
     ```
 
-    seealso: https://github.com/microsoft/python-language-server/blob/master/TROUBLESHOOTING.md#unresolved-import-warnings
+    seealso:
+    - https://github.com/microsoft/python-language-server/blob/master/TROUBLESHOOTING.md#unresolved-import-warnings
+    - https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations
+    - https://code.visualstudio.com/docs/python/environments
+
+
+# Intall airflow on local ubuntu
+
+```shell
+$ export AIRFLOW_VERSION=2.0.1
+$ export PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
+$ export CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+$ pip install "apache-airflow[amazon,postgres]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+```
+
+Seealso: https://airflow.apache.org/docs/apache-airflow/stable/installation.html#installation-airflow-extra-dependencies

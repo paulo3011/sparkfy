@@ -73,7 +73,7 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 
 ## 2. Database schema design and ETL pipeline defense.
 
-![dw schema](./runtime/assets/images/sparkfy_dw_schema.jpg)
+![dw schema](./assets/images/sparkfy_dw_schema.jpg)
 
 
 # Run the code
@@ -81,13 +81,13 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 1. Start the airflow using docker-compose
 
 ```shell
-docker-compose up -d
+$ docker-compose up -d
 ```
 2. start the scheduler
 
 ```shell
-docker exec -it airflow-v2.0.1 bash
-airflow scheduler
+$ docker exec -it airflow-v2.0.1 bash
+$ airflow scheduler
 ```
 
 # Airflow cli commands
@@ -133,7 +133,7 @@ To test load and run the dag file you can use:
 ```shell
 # airflow dags test [dag_id] 2021-04-13
 # sample:
-airflow dags test hello_world 2021-04-13
+airflow dags test udac_example_dag 2021-04-13
 ```
 
 To check if some dag file is without error you can do:
