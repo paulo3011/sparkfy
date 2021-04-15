@@ -1,10 +1,12 @@
-
 from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from custom_operator.hello_operator import HelloOperator
-from operators.stage_redshift import (StageToRedshiftOperator)
+from operators.stage_redshift import StageToRedshiftOperator
+from operators.load_fact import LoadFactOperator
+from operators.load_dimension import LoadDimensionOperator
+from operators.data_quality import DataQualityOperator
 from helpers.sql_queries import SqlQueries
 
 # AWS_KEY = os.environ.get('AWS_KEY')
@@ -19,6 +21,7 @@ dag = DAG('udac_example_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='0 * * * *'
+          # ,catchup=False
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -33,7 +36,6 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     dag=dag
 )
 
-"""
 load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag
@@ -65,4 +67,3 @@ run_quality_checks = DataQualityOperator(
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
-"""

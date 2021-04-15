@@ -1,7 +1,7 @@
 {
     "python.pythonPath": "~/.virtualenvs/sparkfy/bin/python",
     "python.autoComplete.extraPaths": [
-        "project1/runtime/"
+        "./project6-data-pipelines",
     ],
     "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": false,

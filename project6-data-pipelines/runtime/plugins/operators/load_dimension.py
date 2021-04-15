@@ -1,6 +1,5 @@
-"""
-from airflow.hooks.postgres_hook import PostgresHook
-from airflow.models import BaseOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadDimensionOperator(BaseOperator):
@@ -21,4 +20,3 @@ class LoadDimensionOperator(BaseOperator):
 
     def execute(self, context):
         self.log.info('LoadDimensionOperator not implemented yet')
-"""
