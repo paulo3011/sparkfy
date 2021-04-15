@@ -1,2 +1,5 @@
 project1/runtime/__pycache__
 utils/petl_test.py
+
+*.DS_Store
+**/__pycache__/*
