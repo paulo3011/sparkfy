@@ -13,13 +13,13 @@ from helpers.sql_queries import SqlQueries
 
 default_args = {
     'owner': 'udacity',
-    'start_date': datetime(2019, 1, 12),
+    'start_date': datetime(2018, 1, 10),
 }
 
 dag = DAG('udac_example_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *'
+          schedule_interval='0 23 * * *'
           # ,catchup=False
         )
 
@@ -27,12 +27,22 @@ start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
-    dag=dag
+    dag=dag,
+    source_path="s3://moreira-ud/udacity-dend/log_data/",
+    target_table="stage_events",
+    redshift_conn_id="redshift_conn_id",
+    partition_by="/{{execution_date.strftime('%Y/%m')}}/{{execution_date.strftime('%Y')}}-{{execution_date.strftime('%m')}}-{{execution_date.strftime('%d')}}-events.json",
+    jsonpaths="s3://moreira-ud/udacity-dend/log_json_path.json",
 )
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
-    dag=dag
+    dag=dag,
+    source_path="s3://moreira-ud/udacity-dend/song_data/",
+    target_table="stage_events",
+    redshift_conn_id="redshift_conn_id",
+    partition_by="",
+    jsonpaths=None,
 )
 
 load_songplays_table = LoadFactOperator(
