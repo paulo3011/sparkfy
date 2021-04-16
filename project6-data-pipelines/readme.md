@@ -81,13 +81,19 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 1. Start the airflow using docker-compose
 
 ```shell
+$ # enter on your docker directory
+$ cd ~/projects/paulo3011/sparkfy/project6-data-pipelines/docker
+$ # inicie o docker compose in background
 $ docker-compose up -d
 ```
 2. start the scheduler
 
 ```shell
+$ # login on airflow instance
 $ docker exec -it airflow-v2.0.1 bash
-$ airflow scheduler
+$ # start airflow scheduler
+$ airflow scheduler &
+$ # Access on browser http://localhost:8080/
 ```
 
 # Airflow cli commands

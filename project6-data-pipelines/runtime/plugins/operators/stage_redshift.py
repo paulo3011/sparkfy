@@ -1,7 +1,39 @@
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
+
+def _get_json_copy_command(target_table, source, iam_role, jsonpaths=None, region=""):
+    """
+    Notes:
+    Loss of numeric precision: You might lose precision when loading numbers
+    from data files in JSON format to a column that is defined as a numeric
+    data type. Some floating point values aren't represented exactly in
+    computer systems. As a result, data you copy from a JSON file might
+    not be rounded as you expect. To avoid a loss of precision seealso:
+    https://docs.aws.amazon.com/redshift/latest/dg/copy-usage_notes-copy-from-json.html
+    """
+    _jsonpaths = "auto ignorecase"
+    _region = ""
+    if jsonpaths is not None:
+        _jsonpaths = jsonpaths
+    if region is not None:
+        _region = "region " + region
+
+    json_copy = ("""
+    COPY {} FROM '{}'
+    IAM_ROLE '{}'
+    JSON '{}'
+    '{}';
+    """).format(
+        target_table,
+        source,
+        iam_role,
+        _jsonpaths,
+        _region
+        )
+    return json_copy
 
 class StageToRedshiftOperator(BaseOperator):
     """
@@ -56,13 +88,16 @@ class StageToRedshiftOperator(BaseOperator):
                  *args, **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
-        # Map params here
-        # Example:
-        # self.conn_id = conn_id
-        # self.execution_date = execution_date
+        self.source_path = source_path
+        self.target_table = target_table
+        self.conn_id = redshift_conn_id
         self.partition_by = partition_by
+        self.jsonpaths = jsonpaths
 
     def execute(self, context):
-        # self.log.info(f"execution_date: {self.execution_date}")
+        self.log.info(f"source_path: {self.source_path}")
+        self.log.info(f"target_table: {self.target_table}")
+        self.log.info(f"conn_id: {self.conn_id}")
         self.log.info(f"partition_by: {self.partition_by}")
+        self.log.info(f"jsonpaths: {self.jsonpaths}")
         self.log.info(f"StageToRedshiftOperator not implemented yet.")

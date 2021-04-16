@@ -13,12 +13,13 @@ from helpers.sql_queries import SqlQueries
 
 default_args = {
     'owner': 'udacity',
-    'start_date': datetime(2018, 1, 10),
+    'start_date': datetime(2018, 11, 1),
+    'end_date': datetime(2018, 12, 1)
 }
 
 dag = DAG('udac_example_dag',
           default_args=default_args,
-          description='Load and transform data in Redshift with Airflow',
+          description='Load and transform data in Redshift with Airflow.',
           schedule_interval='0 23 * * *'
           # ,catchup=False
         )
