@@ -149,6 +149,18 @@ docker exec -it airflow-v2.0.1 bash
 python dags/udac_example_dag.py
 ```
 
+# Configure redshift connection
+
+On create connection page, enter the following values:
+
+- Conn Id: Enter redshift.
+- Conn Type: Enter Postgres.
+- Host: Enter the endpoint of your Redshift cluster, excluding the port at the end. You can find this by selecting your cluster in the Clusters page of the Amazon Redshift console. See where this is located in the screenshot below. IMPORTANT: Make sure to NOT include the port at the end of the Redshift endpoint string.
+- Schema: Enter dev. This is the Redshift database you want to connect to.
+- Login: Enter awsuser.
+- Password: Enter the password you created when launching your Redshift cluster.
+- Port: Enter 5439.
+
 # References
 
 - https://www.youtube.com/watch?v=wDr3Y7q2XoI

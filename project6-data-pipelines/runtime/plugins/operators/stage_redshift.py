@@ -1,39 +1,8 @@
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+# from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-
-def _get_json_copy_command(target_table, source, iam_role, jsonpaths=None, region=""):
-    """
-    Notes:
-    Loss of numeric precision: You might lose precision when loading numbers
-    from data files in JSON format to a column that is defined as a numeric
-    data type. Some floating point values aren't represented exactly in
-    computer systems. As a result, data you copy from a JSON file might
-    not be rounded as you expect. To avoid a loss of precision seealso:
-    https://docs.aws.amazon.com/redshift/latest/dg/copy-usage_notes-copy-from-json.html
-    """
-    _jsonpaths = "auto ignorecase"
-    _region = ""
-    if jsonpaths is not None:
-        _jsonpaths = jsonpaths
-    if region is not None:
-        _region = "region " + region
-
-    json_copy = ("""
-    COPY {} FROM '{}'
-    IAM_ROLE '{}'
-    JSON '{}'
-    '{}';
-    """).format(
-        target_table,
-        source,
-        iam_role,
-        _jsonpaths,
-        _region
-        )
-    return json_copy
 
 class StageToRedshiftOperator(BaseOperator):
     """
@@ -43,8 +12,7 @@ class StageToRedshiftOperator(BaseOperator):
     needs to specify where in S3 the file is loaded and what is the
     target table.
 
-    The parameters should be used to distinguish between JSON file. Another
-    important requirement of the stage operator is containing a templated field
+    The stage operator containing a templated field called partition_by
     that allows it to load timestamped files from S3 based on the execution
     time and run backfills.
 
@@ -57,8 +25,8 @@ class StageToRedshiftOperator(BaseOperator):
     :param target_table: what is the target table
     :type target_table: str
 
-    :param redshift_conn_id: redshift connection ID
-    :type redshift_conn_id: str
+    :param conn_id: redshift connection ID
+    :type conn_id: str
 
     :param partition_by: (Optional) part of the path who is related to
     partition. e.g: the path log_data/2018/11/2018-11-01-events.json
@@ -82,7 +50,8 @@ class StageToRedshiftOperator(BaseOperator):
     def __init__(self,
                  source_path="",
                  target_table="",
-                 redshift_conn_id="",
+                 conn_id="redshift",
+                 iam_role="",
                  partition_by="/{{execution_date.strftime('%Y/%-m/')}}",
                  jsonpaths=None,
                  *args, **kwargs):
@@ -90,7 +59,8 @@ class StageToRedshiftOperator(BaseOperator):
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
         self.source_path = source_path
         self.target_table = target_table
-        self.conn_id = redshift_conn_id
+        self.conn_id = conn_id
+        self.iam_role = iam_role
         self.partition_by = partition_by
         self.jsonpaths = jsonpaths
 
@@ -101,3 +71,53 @@ class StageToRedshiftOperator(BaseOperator):
         self.log.info(f"partition_by: {self.partition_by}")
         self.log.info(f"jsonpaths: {self.jsonpaths}")
         self.log.info(f"StageToRedshiftOperator not implemented yet.")
+        self._load_data_to_redshift(
+            self.source_path,
+            self.target_table,
+            self.conn_id,
+            self.iam_role,
+            self.partition_by,
+            self.jsonpaths)
+
+    def _get_json_copy_command(self, target_table, source, iam_role, jsonpaths=None, region="us-east-1"):
+        """
+        Notes:
+        Loss of numeric precision: You might lose precision when loading numbers
+        from data files in JSON format to a column that is defined as a numeric
+        data type. Some floating point values aren't represented exactly in
+        computer systems. As a result, data you copy from a JSON file might
+        not be rounded as you expect. To avoid a loss of precision seealso:
+        https://docs.aws.amazon.com/redshift/latest/dg/copy-usage_notes-copy-from-json.html
+        """
+        _jsonpaths = "auto ignorecase"
+        _region = ""
+        if jsonpaths is not None:
+            _jsonpaths = jsonpaths
+        if region is not None:
+            _region = f"region '{region}'"
+
+        json_copy = ("""
+        COPY {} FROM '{}'
+        IAM_ROLE '{}'
+        JSON '{}'
+        {};
+        """).format(
+            target_table,
+            source,
+            iam_role,
+            _jsonpaths,
+            _region
+            )
+        return json_copy
+
+    def _load_data_to_redshift(self, source_path, target_table, conn_id, iam_role, partition_by=None, jsonpaths=None, *args, **kwargs):
+        _source_path = source_path
+        if partition_by is not None:
+            _source_path = source_path + partition_by
+
+        self.log.info(f"Creating Hook PostgresHook('{conn_id}')")
+        redshift_hook = PostgresHook(conn_id)
+        sql_command = self._get_json_copy_command(
+            target_table, _source_path, iam_role, jsonpaths)
+        self.log.info(f"sql_copy: {sql_command}")
+        redshift_hook.run(sql_command)
