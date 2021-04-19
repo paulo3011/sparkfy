@@ -44,8 +44,17 @@ class SqlQueries:
     """)
 
     song_table_insert = ("""
-        SELECT distinct song_id, title, artist_id, year, duration
-        FROM staging_songs
+    INSERT
+        INTO
+        dim_song (song_id, title, artist_id, "year", duration)
+    SELECT
+        distinct song_id,
+        title,
+        artist_id,
+        year,
+        duration
+    FROM
+        stage_songs;
     """)
 
     artist_table_insert = ("""
