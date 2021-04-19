@@ -1,38 +1,46 @@
 class SqlQueries:
     songplay_table_insert = ("""
-        INSERT INTO fact_songplays (
-            start_time,
-            user_id,
-            level,
-            song_id,
-            artist_id,
-            session_id,
-            location,
-            user_agent,
-            start_date)
+    INSERT
+        INTO
+        fact_songplays ( start_time, user_id, level, song_id, artist_id, session_id, location, user_agent, start_date)
+    SELECT
+        events.ts as start_time,
+        events.userid,
+        events.level,
+        songs.song_id,
+        songs.artist_id,
+        events.sessionid,
+        events.location,
+        events.useragent,
+        events.start_date
+    FROM
+        (
         SELECT
-                events.ts as start_time,
-                events.userid,
-                events.level,
-                songs.song_id,
-                songs.artist_id,
-                events.sessionid,
-                events.location,
-                events.useragent,
-                events.start_date
-                FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_date, *
-            FROM stage_events
-            WHERE page='NextSong') events
-            LEFT JOIN stage_songs songs
-            ON events.song = songs.title
-                AND events.artist = songs.artist_name
-                AND events.length = songs.duration;
+            TIMESTAMP 'epoch' + ts / 1000 * interval '1 second' AS start_date, *
+        FROM
+            stage_events
+        WHERE
+            page = 'NextSong') events
+    LEFT JOIN stage_songs songs ON
+        events.song = songs.title
+        AND events.artist = songs.artist_name
+        AND events.length = songs.duration;
     """)
 
     user_table_insert = ("""
-        SELECT distinct userid, firstname, lastname, gender, level
-        FROM staging_events
-        WHERE page='NextSong'
+    INSERT
+        INTO
+        dim_user (user_id, first_name, last_name, gender, "level")
+    SELECT
+        distinct userid,
+        firstname,
+        lastname,
+        gender,
+        level
+    FROM
+        stage_events
+    WHERE
+        page = 'NextSong';
     """)
 
     song_table_insert = ("""
