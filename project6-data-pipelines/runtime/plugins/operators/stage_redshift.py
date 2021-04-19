@@ -2,7 +2,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 # from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
-
+from airflow.models import Variable
 
 class StageToRedshiftOperator(BaseOperator):
     """
@@ -51,8 +51,8 @@ class StageToRedshiftOperator(BaseOperator):
                  source_path="",
                  target_table="",
                  conn_id="redshift",
-                 iam_role="",
-                 partition_by="/{{execution_date.strftime('%Y/%-m/')}}",
+                 iam_role=None,
+                 partition_by="{{execution_date.strftime('%Y/%-m/')}}",
                  jsonpaths=None,
                  *args, **kwargs):
 
@@ -63,6 +63,9 @@ class StageToRedshiftOperator(BaseOperator):
         self.iam_role = iam_role
         self.partition_by = partition_by
         self.jsonpaths = jsonpaths
+
+        if iam_role is None:
+            iam_role = Variable.get("redshift_iam_role")
 
     def execute(self, context):
         self.log.info(f"source_path: {self.source_path}")

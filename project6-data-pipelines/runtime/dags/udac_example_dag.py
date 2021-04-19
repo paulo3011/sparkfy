@@ -33,7 +33,8 @@ stage_events_to_redshift = StageToRedshiftOperator(
     source_path="s3://moreira-ud/udacity-dend/log_data/",
     target_table="stage_events",
     conn_id="redshift",
-    partition_by="{{execution_date.strftime('%Y/%m')}}/{{execution_date.strftime('%Y')}}-{{execution_date.strftime('%m')}}-{{execution_date.strftime('%d')}}-events.json",
+    # partition_by="{{execution_date.strftime('%Y/%m')}}/{{execution_date.strftime('%Y')}}-{{execution_date.strftime('%m')}}-{{execution_date.strftime('%d')}}-events.json",
+    partition_by="{{execution_date.strftime('%Y/%m')}}/",
     jsonpaths="s3://moreira-ud/udacity-dend/log_json_path.json",
     retries=0
 )
