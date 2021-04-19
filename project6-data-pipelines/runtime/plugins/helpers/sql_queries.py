@@ -1,22 +1,32 @@
 class SqlQueries:
     songplay_table_insert = ("""
+        INSERT INTO fact_songplays (
+            start_time,
+            user_id,
+            level,
+            song_id,
+            artist_id,
+            session_id,
+            location,
+            user_agent,
+            start_date)
         SELECT
-                md5(events.sessionid || events.start_time) songplay_id,
-                events.start_time,
+                events.ts as start_time,
                 events.userid,
                 events.level,
                 songs.song_id,
                 songs.artist_id,
                 events.sessionid,
                 events.location,
-                events.useragent
-                FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time, *
-            FROM staging_events
+                events.useragent,
+                events.start_date
+                FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_date, *
+            FROM stage_events
             WHERE page='NextSong') events
-            LEFT JOIN staging_songs songs
+            LEFT JOIN stage_songs songs
             ON events.song = songs.title
                 AND events.artist = songs.artist_name
-                AND events.length = songs.duration
+                AND events.length = songs.duration;
     """)
 
     user_table_insert = ("""
@@ -150,7 +160,7 @@ class SqlQueries:
         CREATE TABLE IF NOT EXISTS fact_songplays
         (
             songplay_id bigint IDENTITY(0,1) NOT NULL
-            ,start_time bigint      REFERENCES dim_time (start_time)
+            ,start_time bigint      REFERENCES dim_time (start_time) NOT NULL
             ,user_id integer        REFERENCES dim_user (user_id)
             ,level varchar(4)       -- paid or free
             ,song_id varchar(30)    NULL REFERENCES dim_song (song_id)
@@ -158,6 +168,7 @@ class SqlQueries:
             ,session_id integer
             ,location varchar(255)
             ,user_agent varchar(400)
+            ,start_date timestamp NOT NULL
             ,PRIMARY KEY (songplay_id)
         )
         DISTSTYLE KEY
