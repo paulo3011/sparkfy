@@ -27,7 +27,7 @@ class SqlQueries:
         AND events.length = songs.duration;
     """)
 
-    user_table_insert = ("""
+    user_table_insert = ("TRUNCATE TABLE dim_user;", """
     INSERT
         INTO
         dim_user (user_id, first_name, last_name, gender, "level")
@@ -43,7 +43,7 @@ class SqlQueries:
         page = 'NextSong';
     """)
 
-    song_table_insert = ("""
+    song_table_insert = ("TRUNCATE TABLE dim_song;", """
     INSERT
         INTO
         dim_song (song_id, title, artist_id, "year", duration)
@@ -57,7 +57,7 @@ class SqlQueries:
         stage_songs;
     """)
 
-    artist_table_insert = ("""
+    artist_table_insert = ("TRUNCATE TABLE dim_artist;", """
     INSERT
         INTO
         dim_artist (artist_id, "name", location, latitude, longitude)
@@ -71,7 +71,7 @@ class SqlQueries:
         stage_songs;
     """)
 
-    time_table_insert = ("""
+    time_table_insert = ("TRUNCATE TABLE dim_time;", """
     INSERT
         INTO
         dim_time (start_time, "hour", "day", week, "month", "year", weekday)
