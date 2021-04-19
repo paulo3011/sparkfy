@@ -72,9 +72,20 @@ class SqlQueries:
     """)
 
     time_table_insert = ("""
-        SELECT start_time, extract(hour from start_time), extract(day from start_time), extract(week from start_time),
-               extract(month from start_time), extract(year from start_time), extract(dayofweek from start_time)
-        FROM songplays
+    INSERT
+        INTO
+        dim_time (start_time, "hour", "day", week, "month", "year", weekday)
+    SELECT
+        start_time,
+        -- start_date,
+        extract(hour from start_date) as hour,
+        extract(day from start_date) as day,
+        extract(week from start_date) as week,
+        extract(month from start_date) as month,
+        extract(year from start_date) as year,
+        extract(dayofweek from start_date) as weekday
+    FROM
+        fact_songplays;
     """)
 
     create_db = ("""
