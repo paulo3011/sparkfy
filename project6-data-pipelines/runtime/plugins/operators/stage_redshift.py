@@ -39,19 +39,26 @@ class StageToRedshiftOperator(BaseOperator):
     of JSONPath expressions.
     :type jsonpaths: str
 
+    Notes:
+    - You should avoid usage of Variables outside an operator’s execute()
+    method or Jinja templates if possible, as Variables create a connection
+    to metadata DB of Airflow to fetch the value, which can slow down parsing
+    and place extra load on the DB.
+
     seealso:
+    https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html
     https://airflow.apache.org/docs/apache-airflow/stable/macros-ref.html
     https://strftime.org/
     """
     ui_color = '#358140'
-    template_fields = ["partition_by"]
+    template_fields = ["partition_by", "iam_role"]
 
     @apply_defaults
     def __init__(self,
                  source_path="",
                  target_table="",
                  conn_id="redshift",
-                 iam_role=None,
+                 iam_role="{{var.value.redshift_iam_role}}",
                  partition_by="{{execution_date.strftime('%Y/%-m/')}}",
                  jsonpaths=None,
                  *args, **kwargs):
@@ -64,16 +71,14 @@ class StageToRedshiftOperator(BaseOperator):
         self.partition_by = partition_by
         self.jsonpaths = jsonpaths
 
-        if iam_role is None:
-            iam_role = Variable.get("redshift_iam_role")
-
     def execute(self, context):
         self.log.info(f"source_path: {self.source_path}")
         self.log.info(f"target_table: {self.target_table}")
         self.log.info(f"conn_id: {self.conn_id}")
         self.log.info(f"partition_by: {self.partition_by}")
         self.log.info(f"jsonpaths: {self.jsonpaths}")
-        self.log.info(f"StageToRedshiftOperator not implemented yet.")
+        self.log.info(f"iam_role: {self.iam_role}")
+        self.log.info(f"Starting StageToRedshiftOperator")
         self._load_data_to_redshift(
             self.source_path,
             self.target_table,
@@ -82,7 +87,7 @@ class StageToRedshiftOperator(BaseOperator):
             self.partition_by,
             self.jsonpaths)
 
-    def _get_json_copy_command(self, target_table, source, iam_role, jsonpaths=None, region="us-east-1"):
+    def _get_json_copy_command(self, target_table, source, iam_role, jsonpaths=None, region="us-east-1", truncate_table=True):
         """
         Notes:
         Loss of numeric precision: You might lose precision when loading numbers
@@ -94,10 +99,13 @@ class StageToRedshiftOperator(BaseOperator):
         """
         _jsonpaths = "auto ignorecase"
         _region = ""
+        _truncate_command = ""
         if jsonpaths is not None:
             _jsonpaths = jsonpaths
         if region is not None:
             _region = f"region '{region}'"
+        if truncate_table:
+            _truncate_command = "TRUNCATE TABLE {}; ".format(target_table)
 
         json_copy = ("""
         COPY {} FROM '{}'
@@ -111,6 +119,10 @@ class StageToRedshiftOperator(BaseOperator):
             _jsonpaths,
             _region
             )
+
+        if truncate_table:
+            return (_truncate_command, json_copy)
+
         return json_copy
 
     def _load_data_to_redshift(self, source_path, target_table, conn_id, iam_role, partition_by=None, jsonpaths=None, *args, **kwargs):
@@ -118,7 +130,6 @@ class StageToRedshiftOperator(BaseOperator):
         if partition_by is not None:
             _source_path = source_path + partition_by
 
-        self.log.info(f"Creating Hook PostgresHook('{conn_id}')")
         redshift_hook = PostgresHook(conn_id)
         sql_command = self._get_json_copy_command(
             target_table, _source_path, iam_role, jsonpaths)

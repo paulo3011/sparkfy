@@ -17,19 +17,19 @@ from helpers.sql_queries import SqlQueries
 default_args = {
     "owner": "udacity",
     "start_date": datetime(2018, 11, 1),
-    "end_date": datetime(2018, 11, 2),
+    "end_date": datetime(2018, 11, 30),
     "depends_on_past": False,
     "retries": 3,
     "retry_delay": timedelta(minutes=5),
     "email_on_retry": False
 }
 
-dag = DAG("udac_example_dag",
+dag = DAG("sparkfy_dag",
           default_args=default_args,
           description="Load and transform data in Redshift with Airflow.",
-          schedule_interval="0 23 * * *",
-          # schedule_interval=None
-          catchup=False
+          # schedule_interval="0 23 * * *",
+          schedule_interval="@monthly",
+          catchup=True
         )
 
 start_operator = DummyOperator(task_id="Begin_execution",  dag=dag)
