@@ -37,19 +37,27 @@ class SqlQueries:
     """)
 
     user_table_insert = ("TRUNCATE TABLE dim_user;", """
-    INSERT
-        INTO
-        dim_user (user_id, first_name, last_name, gender, "level")
+    INSERT INTO dim_user
     SELECT
-        distinct userid,
-        firstname,
-        lastname,
-        gender,
-        level
+    userid
+    ,firstname
+    ,lastname
+    ,gender
+    ,level
     FROM
-        stage_events
-    WHERE
-        page = 'NextSong';
+    (
+    SELECT
+        userid
+        ,firstname
+        ,lastname
+        ,gender
+        ,level
+        ,event_date
+        ,ROW_NUMBER () OVER (PARTITION BY userid ORDER BY event_date DESC) AS row_id
+    FROM stage_events
+    WHERE page='NextSong'
+    ) AS users
+    WHERE row_id=1;
     """)
 
     song_table_insert = ("TRUNCATE TABLE dim_song;", """
@@ -71,13 +79,39 @@ class SqlQueries:
         INTO
         dim_artist (artist_id, "name", location, latitude, longitude)
     SELECT
-        distinct artist_id,
+        artist_id,
         artist_name,
         artist_location,
         artist_latitude,
         artist_longitude
     FROM
-        stage_songs;
+    (
+        SELECT
+            artist_id
+            ,artist_name
+            ,artist_location
+            ,artist_latitude
+            ,artist_longitude
+            ,ROW_NUMBER () OVER (
+            PARTITION BY artist_id
+            ORDER BY (has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) DESC )
+            AS row_id
+            ,(has_artist_name + has_artist_location + has_artist_latitude + has_artist_longitude) AS rank
+        FROM (
+        SELECT DISTINCT
+            artist_id
+            ,BTRIM(artist_name) as artist_name
+            ,artist_location
+            ,artist_latitude
+            ,artist_longitude
+            ,case when artist_name is not null then 1 else 0 end      AS has_artist_name
+            ,case when artist_location is not null then 1 else 0 end  AS has_artist_location
+            ,case when artist_latitude is not null then 1 else 0 end  AS has_artist_latitude
+            ,case when artist_longitude is not null then 1 else 0 end AS has_artist_longitude
+        FROM stage_songs
+        ) as songs
+    ) as artists
+    WHERE artists.row_id=1
     """)
 
     time_table_insert = ("TRUNCATE TABLE dim_time;", """
@@ -85,8 +119,7 @@ class SqlQueries:
         INTO
         dim_time (start_time, "hour", "day", week, "month", "year", weekday)
     SELECT
-        start_time,
-        -- start_date,
+        DISTINCT start_time,
         extract(hour from start_date) as hour,
         extract(day from start_date) as day,
         extract(week from start_date) as week,
@@ -96,66 +129,3 @@ class SqlQueries:
     FROM
         fact_songplays;
     """)
-
-    total_play_quality_check = ("""
-    -- Ensure all unique records in stage were inserted to fact table
-    -- If a record is returned and the value is greater than zero, it means that the total number of records in the stage_events table is the same as that entered in the fact_songplays table
-    SELECT
-        count(0) AS total_plays
-    FROM
-        (
-        SELECT
-            DISTINCT ts, userid, sessionid
-        FROM
-            stage_events
-        WHERE
-            page = 'NextSong')
-
-    INTERSECT
-
-    SELECT
-        COUNT(0) AS total_plays
-    FROM
-        fact_songplays fsp
-    JOIN dim_time ON
-        dim_time.start_time = fsp.start_time
-    WHERE
-        fsp.start_time IN (SELECT start_time FROM dim_time
-        WHERE
-            dim_time.month = {{execution_date.strftime("%m")}}
-            AND dim_time.year = {{execution_date.strftime("%Y")}})
-    ;
-    """, "== 1", "> 0")
-
-    integrity_time_play_check = ("""
-    -- Checks if there is a user with duplicate song play records on the same date and time
-    -- The result needs to be zero or none
-    SELECT COUNT(0) AS total
-    FROM
-        fact_songplays fsp
-    JOIN dim_time ON dim_time.start_time = fsp.start_time
-    WHERE
-        dim_time.month = {{execution_date.strftime("%m")}}
-        AND dim_time.year = {{execution_date.strftime("%Y")}}
-    GROUP BY fsp.start_time, fsp.user_id HAVING COUNT(0) > 1;
-    """, "== 0", "")
-
-    total_song_duration_check = ("""
-    -- Ensure that total duration of songs is correct, dim_song have the same total duration as stage_songs
-    -- The result expected is: return one record with the total duration equalty
-    select * from (
-    select
-    (select total_duration_dim_song from (select sum(duration) as total_duration_dim_song from dim_song)) as total_duration_dim_song
-    ,(select total_duration_stage_songs from (select sum(duration) as total_duration_stage_songs from stage_songs)) as total_duration_stage_songs
-    ) as d where d.total_duration_dim_song = d.total_duration_stage_songs
-    ;
-    """, "== 1", "")
-
-    user_load_check = ("""
-    -- Make sure all unique users on stage_events table were imported
-    -- Result expected: none user out of user table
-    SELECT user_id, first_name, last_name, gender, level FROM dim_user
-    EXCEPT
-    SELECT userid as user_id, firstname as first_name, lastname as last_name, gender, level
-    FROM stage_events WHERE page='NextSong';
-    """, "== 0", "")

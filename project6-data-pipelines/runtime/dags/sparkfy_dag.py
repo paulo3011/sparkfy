@@ -7,6 +7,7 @@ from operators.load_fact import LoadFactOperator
 from operators.load_dimension import LoadDimensionOperator
 from operators.data_quality import DataQualityOperator
 from helpers.sql_queries import SqlQueries
+from helpers.sql_data_quality_queries import SqlDataQualityQueries
 
 
 # AWS_KEY = os.environ.get("AWS_KEY")
@@ -88,11 +89,17 @@ load_time_dimension_table = LoadDimensionOperator(
 )
 
 tests = [
-    SqlQueries.total_play_quality_check,
-    SqlQueries.integrity_time_play_check,
-    SqlQueries.total_song_duration_check,
-    SqlQueries.user_load_check]
-# tests = [("select count(0) as total from stage_events;", "== 1", "== 8056")]
+    SqlDataQualityQueries.total_play_quality_check,
+    SqlDataQualityQueries.integrity_time_play_check,
+    SqlDataQualityQueries.total_song_duration_check,
+    SqlDataQualityQueries.song_load_check,
+    SqlDataQualityQueries.unique_song_check,
+    SqlDataQualityQueries.user_load_check,
+    SqlDataQualityQueries.unique_users_check,
+    SqlDataQualityQueries.artist_load_check,
+    SqlDataQualityQueries.unique_artist_check,
+    SqlDataQualityQueries.time_load_check,
+    SqlDataQualityQueries.unique_time_check]
 
 run_quality_checks = DataQualityOperator(
     task_id="Run_data_quality_checks",

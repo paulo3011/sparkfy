@@ -37,6 +37,8 @@ class DataQualityOperator(BaseOperator):
         # Map params here
         self.tests = tests
         self.db_api_hook = db_api_hook
+        self.has_error = False
+        self.total_errors = 0
 
     def execute(self, context):
         self.log.info('Starting DataQualityOperator')
@@ -45,10 +47,13 @@ class DataQualityOperator(BaseOperator):
             sql_test = next(iterator)
             total_records_expression = next(iterator)
             result_expression = next(iterator)
-            self.run_test(sql_test, total_records_expression, result_expression)
+            self._run_test(sql_test, total_records_expression, result_expression)
 
+        if self.has_error:
+            message = f"Data quality check failed. Total tests done: {len(self.tests)}. Total errors: {self.total_errors}"
+            raise ValueError(message)
 
-    def run_test(self, sql_test, total_records_expression="> 0", result_expression="> 0"):
+    def _run_test(self, sql_test, total_records_expression="> 0", result_expression="> 0"):
         records = self.db_api_hook.get_records(sql_test)
         self.log.info("records:")
         self.log.info(records)
@@ -57,7 +62,8 @@ class DataQualityOperator(BaseOperator):
 
         if eval(f"{total_records}{total_records_expression}") is False:
             message = f"Data quality check failed. Were expected that total of records was {total_records_expression}, but got {total_records}. Test done: {sql_test}"
-            raise ValueError(message)
+            self._log_test_error(message)
+            return
 
         if result_expression is None or result_expression == "":
             self.log.info(ok_message)
@@ -67,6 +73,12 @@ class DataQualityOperator(BaseOperator):
 
         if eval(f"{value}{result_expression}") is False:
             message = f"Data quality check failed. Were expected that the value of the first record was {result_expression}, but got {value}. Test done: {sql_test}"
-            raise ValueError(message)
+            self._log_test_error(message)
+            return
 
         self.log.info(ok_message)
+
+    def _log_test_error(self, message):
+        self.total_errors += 1
+        self.has_error = True
+        self.log.info(message)
