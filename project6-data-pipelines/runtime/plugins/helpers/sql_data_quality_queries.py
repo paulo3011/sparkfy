@@ -76,10 +76,10 @@ class SqlDataQualityQueries:
     -- Make sure all unique user on stage_events table were imported
     -- Result expected: none user out of dim_user table
     SELECT * FROM (
-        SELECT userid as user_id, firstname as first_name, lastname as last_name, gender, level
+        SELECT userid as user_id, firstname as first_name, lastname as last_name, gender
         FROM stage_events WHERE page='NextSong'
         EXCEPT
-        SELECT user_id, first_name, last_name, gender, level FROM dim_user
+        SELECT user_id, first_name, last_name, gender FROM dim_user
     ) LIMIT 1;
     """, "== 0", "")
 
