@@ -119,6 +119,7 @@
 			"njqdev.vscode-python-typehint",
 		],
 		"python.pythonPath": "/home/paulo/.virtualenvs/sparkfy/bin/python",
+		"pythonTestExplorer.testFramework": "unittest",
 	},
 	"extensions": {
 		"recommendations": [

@@ -3,3 +3,5 @@ utils/petl_test.py
 
 *.DS_Store
 **/__pycache__/*
+project6-data-pipelines/runtime/dags/test.py
+project6-data-pipelines/runtime/plugins/operators/data_quality_test.py
