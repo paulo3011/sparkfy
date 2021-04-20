@@ -80,7 +80,7 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 {"artist":"Des'ree","auth":"Logged In","firstName":"Kaylee","gender":"F","itemInSession":1,"lastName":"Summers","length":246.30812,"level":"free","location":"Phoenix-Mesa-Scottsdale, AZ","method":"PUT","page":"NextSong","registration":1540344794796.0,"sessionId":139,"song":"You Gotta Be","status":200,"ts":1541106106796,"userAgent":"\"Mozilla\/5.0 (Windows NT 6.1; WOW64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/35.0.1916.153 Safari\/537.36\"","userId":"8"}
 ```
 
-## 2. Database schema design and ETL pipeline defense.
+## 2. Database schema diagram
 
 ![dw schema](./assets/images/sparkfy_dw_schema.jpg)
 
