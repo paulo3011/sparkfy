@@ -32,7 +32,15 @@ For example one test could be a SQL statement that checks if certain column cont
 
 __This project includes three files:__
 
-- README.md Provide details about this project.
+- README.md - Provide details about this project;
+- create_tables.sql - Create de initial database;
+- runtime/dags/sparkfy_dag.py - The airflow DAG implementation of data pipeline;
+- runtime/plugins/operators/stage_redshift.py - Implementation of Stage Operator
+- runtime/plugins/operators/load_fact.py - Implementation of Fact Operator
+- runtime/plugins/operators/load_dimension.py - Implementation of Dimension Operator
+- runtime/plugins/operators/data_quality.py - Implementation of Data Quality Operator
+- runtime/plugins/helpers/sql_queries.py - Queries used to load data into Redshift
+- runtime/plugins/helpers/sql_data_quality_queries.py - Data quality queries
 
 __Project Datasets:__
 
