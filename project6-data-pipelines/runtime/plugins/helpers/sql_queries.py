@@ -52,8 +52,7 @@ class SqlQueries:
         ,lastname
         ,gender
         ,level
-        ,event_date
-        ,ROW_NUMBER () OVER (PARTITION BY userid ORDER BY event_date DESC) AS row_id
+        ,ROW_NUMBER () OVER (PARTITION BY userid ORDER BY ts DESC) AS row_id
     FROM stage_events
     WHERE page='NextSong'
     ) AS users
