@@ -94,10 +94,9 @@ class SqlDataQualityQueries:
     -- Make sure all unique artist on stage_songs table were imported
     -- Result expected: none artist out of dim_artist table
     SELECT * FROM (
-        SELECT artist_id, artist_name AS "name", artist_location AS location, artist_latitude AS latitude, artist_longitude AS longitude
-        FROM stage_songs
+        SELECT artist_id FROM stage_songs
         EXCEPT
-        SELECT artist_id, "name", location, latitude, longitude FROM dim_artist
+        SELECT artist_id FROM dim_artist
     ) LIMIT 1;
     """, "== 0", "")
 
