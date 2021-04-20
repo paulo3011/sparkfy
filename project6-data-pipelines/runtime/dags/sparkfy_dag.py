@@ -87,10 +87,17 @@ load_time_dimension_table = LoadDimensionOperator(
     sql=SqlQueries.time_table_insert
 )
 
+tests = [
+    SqlQueries.total_play_quality_check,
+    SqlQueries.integrity_time_play_check,
+    SqlQueries.total_song_duration_check,
+    SqlQueries.user_load_check]
+# tests = [("select count(0) as total from stage_events;", "== 1", "== 8056")]
+
 run_quality_checks = DataQualityOperator(
     task_id="Run_data_quality_checks",
     dag=dag,
-    tests=[SqlQueries.total_play_quality_check]
+    tests=tests
 )
 
 end_operator = DummyOperator(task_id="Stop_execution",  dag=dag)

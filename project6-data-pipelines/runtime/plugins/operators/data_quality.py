@@ -15,7 +15,9 @@ class DataQualityOperator(BaseOperator):
     task should retry and fail eventually.
 
     :param tests: a list of set with tests and conditions to check.
-    e.g: tests = [("select count(0) from x", "> 0", "> 1"), ("select count(0) from y", "== 0", "")]
+    e.g: tests = tests = [("select 1 as total", "> 0", ">= 1"),
+    ("select 2 as total where 1=0", "== 0", ""),
+    ("select 2 as total union all select 3 as total", "== 2", "")]
     :type tests: list of set
 
     :param db_api_hook: database connection db api hook.
@@ -50,9 +52,8 @@ class DataQualityOperator(BaseOperator):
         records = self.db_api_hook.get_records(sql_test)
         self.log.info("records:")
         self.log.info(records)
-        self.db_api_hook.run(sql_test)
         total_records = len(records)
-        ok_message = f"Data quality check ok. Test done: {sql_test}"
+        ok_message = f"Data quality check ok. Test done: ({sql_test}) {result_expression}"
 
         if eval(f"{total_records}{total_records_expression}") is False:
             message = f"Data quality check failed. Were expected that total of records was {total_records_expression}, but got {total_records}. Test done: {sql_test}"
