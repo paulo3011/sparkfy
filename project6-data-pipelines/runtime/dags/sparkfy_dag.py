@@ -16,7 +16,7 @@ from helpers.sql_data_quality_queries import SqlDataQualityQueries
 # [ok] https://classroom.udacity.com/nanodegrees/nd027/parts/45d1c3b1-d87b-4578-a6d0-7e86bb5fea6c/modules/57c3b9d1-4d8b-4afe-bfb4-92cfac622c7f/lessons/4d1d5892-2cab-4456-8b1a-fb2b5fa1488d/concepts/3b78f18c-3a53-40ab-8300-b1fe5208de97
 
 default_args = {
-    "owner": "udacity",
+    "owner": "paulo_moreira",
     "start_date": datetime(2018, 11, 1),
     "end_date": datetime(2018, 11, 30),
     "depends_on_past": False,
@@ -28,7 +28,7 @@ default_args = {
 dag = DAG("sparkfy_dag",
           default_args=default_args,
           description="Load and transform data in Redshift with Airflow.",
-          # schedule_interval="0 23 * * *",
+          # schedule_interval="0 * * * *",
           schedule_interval="@monthly",
           catchup=True
         )

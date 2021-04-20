@@ -22,6 +22,8 @@ Most of the logic is within the SQL transformations and the operator is expected
 
 Dimension loads are often done with the truncate-insert pattern where the target table is emptied before the load. Thus, will be create a parameter that allows switching between insert modes when loading dimensions. Fact tables are usually so massive that they should only allow append type functionality.
 
+__Note:__ The parameter implemented that allows switching between insert modes when loading dimensions is sql which can received a set of queries that are sequentially executed. See dim_user insert for more details.
+
 ## Data Quality Operator
 
 The final operator is the data quality operator, which is used to run checks on the data itself. The operator's main functionality is to receive one or more SQL based test cases along with the expected results and execute the tests. For each the test, the test result and expected result needs to be checked and if there is no match, the operator should raise an exception and the task should retry and fail eventually.
@@ -70,11 +72,14 @@ And below is an example of what the data in a log file, 2018-11-12-events.json, 
 {"artist":"Des'ree","auth":"Logged In","firstName":"Kaylee","gender":"F","itemInSession":1,"lastName":"Summers","length":246.30812,"level":"free","location":"Phoenix-Mesa-Scottsdale, AZ","method":"PUT","page":"NextSong","registration":1540344794796.0,"sessionId":139,"song":"You Gotta Be","status":200,"ts":1541106106796,"userAgent":"\"Mozilla\/5.0 (Windows NT 6.1; WOW64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/35.0.1916.153 Safari\/537.36\"","userId":"8"}
 ```
 
-
 ## 2. Database schema design and ETL pipeline defense.
 
 ![dw schema](./assets/images/sparkfy_dw_schema.jpg)
 
+
+## 3. Airflow DAG:
+
+![dw schema](./assets/images/airflow_dag_success.jpg)
 
 # Run the code
 
@@ -139,14 +144,14 @@ To test load and run the dag file you can use:
 ```shell
 # airflow dags test [dag_id] 2021-04-13
 # sample:
-airflow dags test udac_example_dag 2021-04-13
+airflow dags test sparkfy_dag 2021-04-13
 ```
 
 To check if some dag file is without error you can do:
 
 ```shell
 docker exec -it airflow-v2.0.1 bash
-python dags/udac_example_dag.py
+python dags/sparkfy_dag.py
 ```
 
 # Configure redshift connection
