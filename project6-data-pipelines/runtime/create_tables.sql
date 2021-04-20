@@ -40,7 +40,7 @@ CREATE TABLE stage_songs
 	,artist_name varchar(255)
 	,song_id varchar(30)
 	,title varchar(255)
-	,duration numeric(9,5)
+	,duration numeric(10,6)
 	,year smallint
 );
 
