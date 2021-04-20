@@ -178,4 +178,5 @@ On create connection page, enter the following values:
 
 - https://www.udacity.com/course/data-engineer-nanodegree--nd027
 - https://airflow.apache.org/
+- https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html
 - https://www.youtube.com/watch?v=wDr3Y7q2XoI

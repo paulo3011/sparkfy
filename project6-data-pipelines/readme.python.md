@@ -60,7 +60,7 @@
     - https://code.visualstudio.com/docs/python/environments
 
 
-# Intall airflow on local ubuntu
+# Install airflow on local ubuntu
 
 ```shell
 $ export AIRFLOW_VERSION=2.0.1
